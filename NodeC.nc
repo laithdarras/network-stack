@@ -16,18 +16,35 @@ configuration NodeC{
 implementation {
     components MainC;
     components Node;
-    components new AMReceiverC(AM_PACK) as GeneralReceive;
+    components new AMReceiverC(AM_PACK) as GeneralReceive; // debug receive path
 
+    // Boot
     Node -> MainC.Boot;
 
+    // Raw receive (debug only)
     Node.Receive -> GeneralReceive;
 
+    // Radio control
     components ActiveMessageC;
     Node.AMControl -> ActiveMessageC;
 
+    // App SimpleSend instance
     components new SimpleSendC(AM_PACK);
-    Node.Sender -> SimpleSendC;
+    Node.SS -> SimpleSendC;
 
+    // TOSSIM Command handler
     components CommandHandlerC;
-    Node.CommandHandler -> CommandHandlerC;
+    Node.Cmd -> CommandHandlerC;
+
+    // Timer used by Node for wiring check
+    components new TimerMilliC();
+    Node.NDTimer -> TimerMilliC;
+
+    // Neighbor Discovery module
+    components new NeighborDiscoveryC(0) as NeighborDiscoveryC;
+    Node.ND -> NeighborDiscoveryC;
+
+    // Flooding module
+    components FloodingC;
+    Node.Flood -> FloodingC;
 }

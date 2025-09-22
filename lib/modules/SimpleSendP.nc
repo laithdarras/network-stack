@@ -11,7 +11,7 @@
 
 generic module SimpleSendP(){
     // provides shows the interface we are implementing. See lib/interface/SimpleSend.nc
-    // to see what funcitons we need to implement.
+    // to see what functions we need to implement.
    provides interface SimpleSend;
 
    uses interface Queue<sendInfo*>;
@@ -33,7 +33,7 @@ implementation{
 
    error_t send(uint16_t src, uint16_t dest, pack *message);
 
-   // Use this to intiate a send task. We call this method so we can add
+   // Use this to initiate a send task. We call this method so we can add
    // a delay between sends. If we don't add a delay there may be collisions.
    void postSendTask(){
       // If a task already exist, we don't want to overwrite the clock, so
