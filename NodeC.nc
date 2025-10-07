@@ -17,26 +17,20 @@ implementation {
     components Node;
     components new AMReceiverC(AM_PACK) as GeneralReceive; // debug receive path
 
-    // Boot the Main Controller Program
     Node -> MainC.Boot;
 
-    // Raw receive (debug only)
     Node.Receive -> GeneralReceive;
 
-    // Radio control for sending and receiving packets
     components ActiveMessageC;
     Node.AMControl -> ActiveMessageC;
     Node.AMPacket -> ActiveMessageC;
 
-    // SimpleSend for sending packets in the network to other nodes in the topology
     components new SimpleSendC(AM_PACK);
     Node.SS -> SimpleSendC;
 
-    // TOSSIM Command handler
     components CommandHandlerC;
     Node.Cmd -> CommandHandlerC;
 
-    // Timer used by Node for wiring check
     components new TimerMilliC();
     Node.NDTimer -> TimerMilliC;
 

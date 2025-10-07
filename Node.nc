@@ -27,10 +27,9 @@ module Node{
    uses interface Flooding as Flood;       // Flooding - Project 1
 }
 
-// Max TTL for packets
 implementation{
-   pack sendPackage;          // packet to send
-   uint16_t floodSeq = 0;         // sequence number for flooding packets to track duplicates using uint16 to avoid overflow of TOSSIM limitations
+   pack sendPackage;          
+   uint16_t floodSeq = 0;
 
    // Helper functions to create packets
    void makePack(pack *Package, uint16_t src, uint16_t dest, uint16_t TTL, uint16_t Protocol, uint16_t seq, uint8_t *payload, uint8_t length);
@@ -68,7 +67,7 @@ implementation{
       } else {
          dbg(GENERAL_CHANNEL, "Unknown protocol %d from %d\n", myMsg->protocol, inbound);
       }
-      return msg;  // Return the message
+      return msg;
    }
 
    // Timer for periodic operations
@@ -113,6 +112,7 @@ implementation{
    event void Cmd.setAppServer(){}
    event void Cmd.setAppClient(){}
 
+   // Create packets
    void makePack(pack *Package, uint16_t src, uint16_t dest, uint16_t TTL, uint16_t protocol, uint16_t seq, uint8_t* payload, uint8_t length){
       Package->src = src;
       Package->dest = dest;

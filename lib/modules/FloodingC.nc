@@ -11,12 +11,10 @@ implementation{
    Flooding = FloodingP.Flooding;
 
    components new SimpleSendC(AM_PACK) as FloodSend;
-   FloodingP.SS -> FloodSend;
+   FloodingP.SS -> FloodSend;       // Sending packets to the lower link layer for transmission
 
    components new TimerMilliC() as dupTimer;
-   FloodingP.dupTimer -> dupTimer;
+   FloodingP.dupTimer -> dupTimer;   // Checking for duplicates is important in flooding to prevent network congestion
 
-   FloodingP.ND = NeighborDiscovery;
-
-   // Note: ND interface will be wired in NodeC.nc
+   FloodingP.ND = NeighborDiscovery;  // Flooding needs access to ND's neighbor table for per-link forwarding
 }
