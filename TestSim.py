@@ -15,21 +15,21 @@ class TestSim:
     CMD_ROUTE_DUMP=3
 
     # CHANNELS - see includes/channels.h
-    COMMAND_CHANNEL="command";
-    GENERAL_CHANNEL="general";
+    COMMAND_CHANNEL="command"
+    GENERAL_CHANNEL="general"
 
     # Project 1
-    NEIGHBOR_CHANNEL="neighbor";
-    FLOODING_CHANNEL="flooding";
+    NEIGHBOR_CHANNEL="neighbor"
+    FLOODING_CHANNEL="flooding"
 
     # Project 2
-    ROUTING_CHANNEL="routing";
+    ROUTING_CHANNEL="routing"
 
     # Project 3
-    TRANSPORT_CHANNEL="transport";
+    TRANSPORT_CHANNEL="transport"
 
     # Personal Debuggin Channels for some of the additional models implemented.
-    HASHMAP_CHANNEL="hashmap";
+    HASHMAP_CHANNEL="hashmap"
 
     # Initialize Vars
     numMote=0
@@ -45,16 +45,16 @@ class TestSim:
 
     # Load a topo file and use it.
     def loadTopo(self, topoFile):
-        print 'Creating Topo!'
+        print("Creating Topo!")
         # Read topology file.
         topoFile = 'topo/'+topoFile
         f = open(topoFile, "r")
         self.numMote = int(f.readline());
-        print 'Number of Motes', self.numMote
+        print("Number of Motes"), self.numMote
         for line in f:
             s = line.split()
             if s:
-                print " ", s[0], " ", s[1], " ", s[2];
+                print(""), s[0], " ", s[1], " ", s[2];
                 self.r.add(int(s[0]), int(s[1]), float(s[2]))
                 if not int(s[0]) in self.moteids:
                     self.moteids=self.moteids+[int(s[0])]
@@ -64,11 +64,11 @@ class TestSim:
     # Load a noise file and apply it.
     def loadNoise(self, noiseFile):
         if self.numMote == 0:
-            print "Create a topo first"
-            return;
+            print("Create a topo first")
+            return
 
         # Get and Create a Noise Model
-        noiseFile = 'noise/'+noiseFile;
+        noiseFile = 'noise/'+noiseFile
         noise = open(noiseFile, "r")
         for line in noise:
             str1 = line.strip()
@@ -78,25 +78,25 @@ class TestSim:
                 self.t.getNode(i).addNoiseTraceReading(val)
 
         for i in self.moteids:
-            print "Creating noise model for ",i;
+            print("Creating noise model for "),i
             self.t.getNode(i).createNoiseModel()
 
     def bootNode(self, nodeID):
         if self.numMote == 0:
-            print "Create a topo first"
-            return;
-        self.t.getNode(nodeID).bootAtTime(1333*nodeID);
+            print("Create a topo first")
+            return
+        self.t.getNode(nodeID).bootAtTime(1333*nodeID)
 
     def bootAll(self):
-        i=0;
+        i=0
         for i in self.moteids:
-            self.bootNode(i);
+            self.bootNode(i)
 
     def moteOff(self, nodeID):
-        self.t.getNode(nodeID).turnOff();
+        self.t.getNode(nodeID).turnOff()
 
     def moteOn(self, nodeID):
-        self.t.getNode(nodeID).turnOn();
+        self.t.getNode(nodeID).turnOn()
 
     def run(self, ticks):
         for i in range(ticks):
@@ -108,8 +108,8 @@ class TestSim:
 
     # Generic Command
     def sendCMD(self, ID, dest, payloadStr):
-        self.msg.set_dest(dest);
-        self.msg.set_id(ID);
+        self.msg.set_dest(dest)
+        self.msg.set_id(ID)
         self.msg.setString_payload(payloadStr)
 
         self.pkt.setData(self.msg.data)
@@ -117,32 +117,52 @@ class TestSim:
         self.pkt.deliver(dest, self.t.time()+5)
 
     def ping(self, source, dest, msg):
-        self.sendCMD(self.CMD_PING, source, "{0}{1}".format(chr(dest),msg));
+        self.sendCMD(self.CMD_PING, source, "{0}{1}".format(chr(dest),msg))
 
     def neighborDMP(self, destination):
-        self.sendCMD(self.CMD_NEIGHBOR_DUMP, destination, "neighbor command");
+        self.sendCMD(self.CMD_NEIGHBOR_DUMP, destination, "neighbor command")
 
     def routeDMP(self, destination):
-        self.sendCMD(self.CMD_ROUTE_DUMP, destination, "routing command");
+        self.sendCMD(self.CMD_ROUTE_DUMP, destination, "routing command")
 
     def addChannel(self, channelName, out=sys.stdout):
-        print 'Adding Channel', channelName;
-        self.t.addChannel(channelName, out);
+        print("Adding Channel")
+        channelName
+        self.t.addChannel(channelName, out)
 
 def main():
-    s = TestSim();
-    s.runTime(10);
-    s.loadTopo("long_line.topo");
-    s.loadNoise("no_noise.txt");
-    s.bootAll();
-    s.addChannel(s.COMMAND_CHANNEL);
-    s.addChannel(s.GENERAL_CHANNEL);
+    s = TestSim()
+    s.runTime(10)
+    s.loadTopo("long_line.topo")
+    s.loadNoise("no_noise.txt")
+    s.bootAll()
+    s.addChannel(s.COMMAND_CHANNEL) # This channel is used to send commands to the nodes
+    # s.addChannel(s.GENERAL_CHANNEL) # This channel includes ALL messages
+    s.addChannel(s.FLOODING_CHANNEL)  # This channel is used for flooding messages only
+    # s.addChannel(s.NEIGHBOR_CHANNEL)   # This channel is used for neighbor discovery messages only
 
-    s.runTime(20);
-    s.ping(1, 2, "Hello, World");
-    s.runTime(10);
-    s.ping(1, 3, "Hi!");
-    s.runTime(20);
+    s.runTime(20)
+    s.ping(1, 2, "Hello, World")
+    s.runTime(10)
+    s.ping(1, 3, "Hi!")
+    s.runTime(20)
+
+    # Project 1 Testing
+    s.neighborDMP(5)
+    s.runTime(3)
+
+    s.ping(3, 18, "Test 1")
+    s.runTime(60)
+
+    s.moteOff(5)
+    s.runTime(3)
+
+    s.ping(4, 7, "Test 2")
+    s.runTime(60)
+
+    s.neighborDMP(6)
+    s.runTime(3)
+
 
 if __name__ == '__main__':
     main()

@@ -1,9 +1,6 @@
 /*
  * ANDES Lab - University of California, Merced
- * This class provides the basic functions of a network node.
  *
- * Wiring-only scaffolding: Boot + AMControl + Timer + CommandHandler + ND + Flooding
- * Proves wiring via boot and timer prints; no protocol logic yet.
  */
 #include <Timer.h>
 #include "includes/command.h"
@@ -13,83 +10,107 @@
 #include "includes/channels.h"
 
 module Node{
-   uses interface Boot;                    
+   uses interface Boot;             // Boot interface      
 
-   uses interface SplitControl as AMControl;
-   uses interface Receive;                  
+   uses interface SplitControl as AMControl;  // Radio control
+   uses interface Receive;                // Receive packets
+   uses interface AMPacket;               // Link-layer source address
 
-   uses interface SimpleSend as SS;        
+   uses interface SimpleSend as SS;        // SimpleSend interface
 
-   uses interface CommandHandler as Cmd;    
+   uses interface CommandHandler as Cmd;    // TinyOS Simulator Command Interface Service
 
-   uses interface NeighborDiscovery as ND; 
+   uses interface NeighborDiscovery as ND; // Neighbor Discover - Project 1
 
-   uses interface Timer<TMilli> as NDTimer;  
+   uses interface Timer<TMilli> as NDTimer;  // Timer for ND module
 
-   uses interface Flooding as Flood;       
+   uses interface Flooding as Flood;       // Flooding - Project 1
 }
 
+// Max TTL for packets
 implementation{
-   pack sendPackage;
+   pack sendPackage;          // packet to send
+   uint16_t floodSeq = 0;         // sequence number for flooding packets to track duplicates using uint16 to avoid overflow of TOSSIM limitations
 
-   // Prototypes
+   // Helper functions to create packets
    void makePack(pack *Package, uint16_t src, uint16_t dest, uint16_t TTL, uint16_t Protocol, uint16_t seq, uint8_t *payload, uint8_t length);
 
-   // On boot: start radio, print, and start a short one-shot timer
+   // On boot: start radio, ND, and Flooding
    event void Boot.booted(){
       call AMControl.start();
 
-      dbg(GENERAL_CHANNEL, "Node %d booted; wiring OK\n", TOS_NODE_ID);
-      call NDTimer.startOneShot(250);
+      dbg(GENERAL_CHANNEL, "Node %d booted; starting protocols\n", TOS_NODE_ID);  // Show node boot message
    }
 
    event void AMControl.startDone(error_t err){
       if(err == SUCCESS){
-         dbg(GENERAL_CHANNEL, "Radio On\n");
+         dbg(GENERAL_CHANNEL, "Radio On - starting ND and Flooding\n");   // Show radio message
+         call ND.start();
+         call Flood.start();
       }else{
          // Retry until successful
          call AMControl.start();
       }
    }
 
-   event void AMControl.stopDone(error_t err){}
+   event void AMControl.stopDone(error_t err){}  // Edge case when radio stops
 
-   // Debug-only receive print (no protocol parsing yet)
+   // Handler for all received packets
    event message_t* Receive.receive(message_t* msg, void* payload, uint8_t len){
-      dbg(GENERAL_CHANNEL, "Packet Received\n");
-      if(len==sizeof(pack)){
-         pack* myMsg=(pack*) payload;
-         dbg(GENERAL_CHANNEL, "Package Payload: %s\n", myMsg->payload);
-         return msg;
+      pack* myMsg = (pack*) payload;
+      uint16_t inbound = call AMPacket.source(msg);
+      dbg(GENERAL_CHANNEL, "RX len=%d proto=%d from=%d\n", len, myMsg->protocol, inbound);
+
+      if(myMsg->protocol == 1 || myMsg->protocol == 2) {    // ND REQ/ND REP
+         call ND.onReceive(myMsg, inbound);
+      } else if(myMsg->protocol == 3) {   // FLOOD
+         call Flood.onReceive(myMsg, inbound);
+      } else {
+         dbg(GENERAL_CHANNEL, "Unknown protocol %d from %d\n", myMsg->protocol, inbound);
       }
-      dbg(GENERAL_CHANNEL, "Unknown Packet Type %d\n", len);
-      return msg;
+      return msg;  // Return the message
    }
 
-   // Timer proves wiring only
+   // Timer for periodic operations
    event void NDTimer.fired(){
-      dbg(GENERAL_CHANNEL, "Node %d NDTimer fired\n", TOS_NODE_ID);
+      dbg(GENERAL_CHANNEL, "Node %d periodic timer\n", TOS_NODE_ID);
+      call NDTimer.startOneShot(5000);  // 5 second intervals
    }
 
-   // Command proves CommandHandler path only (no send/flood yet)
+   // Handle ping command - send via flooding
    event void Cmd.ping(uint16_t destination, uint8_t *payload){
-      dbg(COMMAND_CHANNEL, "Cmd.ping received in Node: dest %d\n", destination);    // Check wiring only
+      dbg(COMMAND_CHANNEL, "Cmd.ping received: dest %d\n", destination);
+      
+      // Create flood packet
+      makePack(&sendPackage, TOS_NODE_ID, destination, MAX_TTL, 0, floodSeq++, payload, PACKET_MAX_PAYLOAD_SIZE);
+      
+      // Send via flooding
+      if(call Flood.send(sendPackage, destination) == SUCCESS) {
+         dbg(GENERAL_CHANNEL, "Ping sent via flooding seq=%d\n", sendPackage.seq);
+      } else {
+         dbg(GENERAL_CHANNEL, "Ping send failed\n");
+      }
    }
 
-   event void Cmd.printNeighbors(){}
+   // Handle flood receive events
+   event void Flood.receive(pack msg, uint16_t from) {
+      dbg(GENERAL_CHANNEL, "Flood received: src=%d seq=%d from=%d TTL=%d\n", 
+           msg.src, msg.seq, from, msg.TTL);
+      if(msg.dest == TOS_NODE_ID) {
+         dbg(GENERAL_CHANNEL, "Flood packet for me: %s\n", msg.payload);
+      }
+   }
+
+   event void Cmd.printNeighbors(){
+      call ND.printNeighbors();
+   }
 
    event void Cmd.printRouteTable(){}
-
    event void Cmd.printLinkState(){}
-
    event void Cmd.printDistanceVector(){}
-
    event void Cmd.setTestServer(){}
-
    event void Cmd.setTestClient(){}
-
    event void Cmd.setAppServer(){}
-
    event void Cmd.setAppClient(){}
 
    void makePack(pack *Package, uint16_t src, uint16_t dest, uint16_t TTL, uint16_t protocol, uint16_t seq, uint8_t* payload, uint8_t length){

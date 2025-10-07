@@ -1,9 +1,9 @@
 #include "../../includes/am_types.h"
 
 // Flooding configuration: exposes Flooding and wires its P module
-// Owns a dedicated SimpleSend instance (no logic yet)
 configuration FloodingC{
    provides interface Flooding;
+   uses interface NeighborDiscovery;
 }
 
 implementation{
@@ -12,4 +12,11 @@ implementation{
 
    components new SimpleSendC(AM_PACK) as FloodSend;
    FloodingP.SS -> FloodSend;
+
+   components new TimerMilliC() as dupTimer;
+   FloodingP.dupTimer -> dupTimer;
+
+   FloodingP.ND = NeighborDiscovery;
+
+   // Note: ND interface will be wired in NodeC.nc
 }
