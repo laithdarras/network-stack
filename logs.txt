@@ -1,0 +1,532 @@
+Creating Topo!
+Number of Motes 19
+ 1   2   -54.0
+ 2   3   -54.0
+ 3   4   -54.0
+ 4   5   -54.0
+ 5   6   -54.0
+ 6   7   -54.0
+ 7   8   -54.0
+ 8   9   -54.0
+ 9   10   -54.0
+ 10   11   -54.0
+ 11   12   -54.0
+ 12   13   -54.0
+ 13   14   -54.0
+ 14   15   -54.0
+ 15   16   -54.0
+ 16   17   -54.0
+ 17   18   -54.0
+ 18   19   -54.0
+ 2   1   -54.0
+ 3   2   -54.0
+ 4   3   -54.0
+ 5   4   -54.0
+ 6   5   -54.0
+ 7   6   -54.0
+ 8   7   -54.0
+ 9   8   -54.0
+ 10   9   -54.0
+ 11   10   -54.0
+ 12   11   -54.0
+ 13   12   -54.0
+ 14   13   -54.0
+ 15   14   -54.0
+ 16   15   -54.0
+ 17   16   -54.0
+ 18   17   -54.0
+ 19   18   -54.0
+Creating noise model for  1
+Creating noise model for  2
+Creating noise model for  3
+Creating noise model for  4
+Creating noise model for  5
+Creating noise model for  6
+Creating noise model for  7
+Creating noise model for  8
+Creating noise model for  9
+Creating noise model for  10
+Creating noise model for  11
+Creating noise model for  12
+Creating noise model for  13
+Creating noise model for  14
+Creating noise model for  15
+Creating noise model for  16
+Creating noise model for  17
+Creating noise model for  18
+Creating noise model for  19
+Adding Channel
+Adding Channel
+0:0:0.000000133 DEBUG (1): Node 1 booted; starting protocols
+0:0:0.000000143 DEBUG (1): Radio On - starting ND and Flooding
+0:0:0.000000143 DEBUG (1): ND: Started
+0:0:0.000000143 DEBUG (1): LS: Started
+0:0:0.000000266 DEBUG (2): Node 2 booted; starting protocols
+0:0:0.000000276 DEBUG (2): Radio On - starting ND and Flooding
+0:0:0.000000276 DEBUG (2): ND: Started
+0:0:0.000000276 DEBUG (2): LS: Started
+0:0:0.000000399 DEBUG (3): Node 3 booted; starting protocols
+0:0:0.000000409 DEBUG (3): Radio On - starting ND and Flooding
+0:0:0.000000409 DEBUG (3): ND: Started
+0:0:0.000000409 DEBUG (3): LS: Started
+0:0:0.000000533 DEBUG (4): Node 4 booted; starting protocols
+0:0:0.000000543 DEBUG (4): Radio On - starting ND and Flooding
+0:0:0.000000543 DEBUG (4): ND: Started
+0:0:0.000000543 DEBUG (4): LS: Started
+0:0:0.000000666 DEBUG (5): Node 5 booted; starting protocols
+0:0:0.000000676 DEBUG (5): Radio On - starting ND and Flooding
+0:0:0.000000676 DEBUG (5): ND: Started
+0:0:0.000000676 DEBUG (5): LS: Started
+0:0:0.000000799 DEBUG (6): Node 6 booted; starting protocols
+0:0:0.000000809 DEBUG (6): Radio On - starting ND and Flooding
+0:0:0.000000809 DEBUG (6): ND: Started
+0:0:0.000000809 DEBUG (6): LS: Started
+0:0:0.000000933 DEBUG (7): Node 7 booted; starting protocols
+0:0:0.000000943 DEBUG (7): Radio On - starting ND and Flooding
+0:0:0.000000943 DEBUG (7): ND: Started
+0:0:0.000000943 DEBUG (7): LS: Started
+0:0:0.000001066 DEBUG (8): Node 8 booted; starting protocols
+0:0:0.000001076 DEBUG (8): Radio On - starting ND and Flooding
+0:0:0.000001076 DEBUG (8): ND: Started
+0:0:0.000001076 DEBUG (8): LS: Started
+0:0:0.000001199 DEBUG (9): Node 9 booted; starting protocols
+0:0:0.000001209 DEBUG (9): Radio On - starting ND and Flooding
+0:0:0.000001209 DEBUG (9): ND: Started
+0:0:0.000001209 DEBUG (9): LS: Started
+0:0:0.000001333 DEBUG (10): Node 10 booted; starting protocols
+0:0:0.000001343 DEBUG (10): Radio On - starting ND and Flooding
+0:0:0.000001343 DEBUG (10): ND: Started
+0:0:0.000001343 DEBUG (10): LS: Started
+0:0:0.000001466 DEBUG (11): Node 11 booted; starting protocols
+0:0:0.000001476 DEBUG (11): Radio On - starting ND and Flooding
+0:0:0.000001476 DEBUG (11): ND: Started
+0:0:0.000001476 DEBUG (11): LS: Started
+0:0:0.000001599 DEBUG (12): Node 12 booted; starting protocols
+0:0:0.000001609 DEBUG (12): Radio On - starting ND and Flooding
+0:0:0.000001609 DEBUG (12): ND: Started
+0:0:0.000001609 DEBUG (12): LS: Started
+0:0:0.000001732 DEBUG (13): Node 13 booted; starting protocols
+0:0:0.000001742 DEBUG (13): Radio On - starting ND and Flooding
+0:0:0.000001742 DEBUG (13): ND: Started
+0:0:0.000001742 DEBUG (13): LS: Started
+0:0:0.000001866 DEBUG (14): Node 14 booted; starting protocols
+0:0:0.000001876 DEBUG (14): Radio On - starting ND and Flooding
+0:0:0.000001876 DEBUG (14): ND: Started
+0:0:0.000001876 DEBUG (14): LS: Started
+0:0:0.000001999 DEBUG (15): Node 15 booted; starting protocols
+0:0:0.000002009 DEBUG (15): Radio On - starting ND and Flooding
+0:0:0.000002009 DEBUG (15): ND: Started
+0:0:0.000002009 DEBUG (15): LS: Started
+0:0:0.000002132 DEBUG (16): Node 16 booted; starting protocols
+0:0:0.000002142 DEBUG (16): Radio On - starting ND and Flooding
+0:0:0.000002142 DEBUG (16): ND: Started
+0:0:0.000002142 DEBUG (16): LS: Started
+0:0:0.000002266 DEBUG (17): Node 17 booted; starting protocols
+0:0:0.000002276 DEBUG (17): Radio On - starting ND and Flooding
+0:0:0.000002276 DEBUG (17): ND: Started
+0:0:0.000002276 DEBUG (17): LS: Started
+0:0:0.000002399 DEBUG (18): Node 18 booted; starting protocols
+0:0:0.000002409 DEBUG (18): Radio On - starting ND and Flooding
+0:0:0.000002409 DEBUG (18): ND: Started
+0:0:0.000002409 DEBUG (18): LS: Started
+0:0:0.000002532 DEBUG (19): Node 19 booted; starting protocols
+0:0:0.000002542 DEBUG (19): Radio On - starting ND and Flooding
+0:0:0.000002542 DEBUG (19): ND: Started
+0:0:0.000002542 DEBUG (19): LS: Started
+0:0:1.953125143 DEBUG (1): ND: Sent REQ seq=0
+0:0:1.953125276 DEBUG (2): ND: Sent REQ seq=0
+0:0:1.953125409 DEBUG (3): ND: Sent REQ seq=0
+0:0:1.953125543 DEBUG (4): ND: Sent REQ seq=0
+0:0:1.953125676 DEBUG (5): ND: Sent REQ seq=0
+0:0:1.953125809 DEBUG (6): ND: Sent REQ seq=0
+0:0:1.953125943 DEBUG (7): ND: Sent REQ seq=0
+0:0:1.953126076 DEBUG (8): ND: Sent REQ seq=0
+0:0:1.953126209 DEBUG (9): ND: Sent REQ seq=0
+0:0:1.953126343 DEBUG (10): ND: Sent REQ seq=0
+0:0:1.953126476 DEBUG (11): ND: Sent REQ seq=0
+0:0:1.953126609 DEBUG (12): ND: Sent REQ seq=0
+0:0:1.953126742 DEBUG (13): ND: Sent REQ seq=0
+0:0:1.953126876 DEBUG (14): ND: Sent REQ seq=0
+0:0:1.953127009 DEBUG (15): ND: Sent REQ seq=0
+0:0:1.953127142 DEBUG (16): ND: Sent REQ seq=0
+0:0:1.953127276 DEBUG (17): ND: Sent REQ seq=0
+0:0:1.953127409 DEBUG (18): ND: Sent REQ seq=0
+0:0:1.953127542 DEBUG (19): ND: Sent REQ seq=0
+0:0:1.977096650 DEBUG (2): RX len=28 proto=1 from=1
+0:0:1.977096650 DEBUG (2): ND: Added neighbor 1
+0:0:1.977096650 DEBUG (2): ND: Sent REP to 1
+0:0:1.977096650 DEBUG (2): ND: Received REQ from 1
+0:0:1.984527810 DEBUG (1): RX len=28 proto=1 from=2
+0:0:1.984527810 DEBUG (1): ND: Added neighbor 2
+0:0:1.984527810 DEBUG (1): ND: Sent REP to 2
+0:0:1.984527810 DEBUG (1): ND: Received REQ from 2
+0:0:1.984527810 DEBUG (3): RX len=28 proto=1 from=2
+0:0:1.984527810 DEBUG (3): ND: Added neighbor 2
+0:0:1.984527810 DEBUG (3): ND: Sent REP to 2
+0:0:1.984527810 DEBUG (3): ND: Received REQ from 2
+0:0:2.019854189 DEBUG (18): RX len=28 proto=1 from=19
+0:0:2.019854189 DEBUG (18): ND: Added neighbor 19
+0:0:2.019854189 DEBUG (18): ND: Sent REP to 19
+0:0:2.019854189 DEBUG (18): ND: Received REQ from 19
+0:0:2.045746740 DEBUG (6): RX len=28 proto=1 from=7
+0:0:2.045746740 DEBUG (6): ND: Added neighbor 7
+0:0:2.045746740 DEBUG (6): ND: Sent REP to 7
+0:0:2.045746740 DEBUG (6): ND: Received REQ from 7
+0:0:2.045746740 DEBUG (8): RX len=28 proto=1 from=7
+0:0:2.045746740 DEBUG (8): ND: Added neighbor 7
+0:0:2.045746740 DEBUG (8): ND: Sent REP to 7
+0:0:2.045746740 DEBUG (8): ND: Received REQ from 7
+0:0:2.052735398 DEBUG (7): RX len=28 proto=1 from=8
+0:0:2.052735398 DEBUG (7): ND: Added neighbor 8
+0:0:2.052735398 DEBUG (7): ND: Sent REP to 8
+0:0:2.052735398 DEBUG (7): ND: Received REQ from 8
+0:0:2.052735398 DEBUG (9): RX len=28 proto=1 from=8
+0:0:2.052735398 DEBUG (9): ND: Added neighbor 8
+0:0:2.052735398 DEBUG (9): ND: Sent REP to 8
+0:0:2.052735398 DEBUG (9): ND: Received REQ from 8
+0:0:2.055909381 DEBUG (8): RX len=28 proto=1 from=9
+0:0:2.055909381 DEBUG (8): ND: Added neighbor 9
+0:0:2.055909381 DEBUG (8): ND: Sent REP to 9
+0:0:2.055909381 DEBUG (8): ND: Received REQ from 9
+0:0:2.055909381 DEBUG (10): RX len=28 proto=1 from=9
+0:0:2.055909381 DEBUG (10): ND: Added neighbor 9
+0:0:2.055909381 DEBUG (10): ND: Sent REP to 9
+0:0:2.055909381 DEBUG (10): ND: Received REQ from 9
+0:0:2.059220692 DEBUG (9): RX len=28 proto=1 from=10
+0:0:2.059220692 DEBUG (9): ND: Added neighbor 10
+0:0:2.059220692 DEBUG (9): ND: Sent REP to 10
+0:0:2.059220692 DEBUG (9): ND: Received REQ from 10
+0:0:2.059220692 DEBUG (11): RX len=28 proto=1 from=10
+0:0:2.059220692 DEBUG (11): ND: Added neighbor 10
+0:0:2.059220692 DEBUG (11): ND: Sent REP to 10
+0:0:2.059220692 DEBUG (11): ND: Received REQ from 10
+0:0:2.079316352 DEBUG (8): RX len=28 proto=2 from=9
+0:0:2.079316352 DEBUG (8): ND: Received REP from 9
+0:0:2.126680430 DEBUG (14): RX len=28 proto=1 from=15
+0:0:2.126680430 DEBUG (14): ND: Added neighbor 15
+0:0:2.126680430 DEBUG (14): ND: Sent REP to 15
+0:0:2.126680430 DEBUG (14): ND: Received REQ from 15
+0:0:2.126680430 DEBUG (16): RX len=28 proto=1 from=15
+0:0:2.126680430 DEBUG (16): ND: Added neighbor 15
+0:0:2.126680430 DEBUG (16): ND: Sent REP to 15
+0:0:2.126680430 DEBUG (16): ND: Received REQ from 15
+0:0:2.128664235 DEBUG (15): RX len=28 proto=1 from=16
+0:0:2.128664235 DEBUG (15): ND: Added neighbor 16
+0:0:2.128664235 DEBUG (15): ND: Sent REP to 16
+0:0:2.128664235 DEBUG (15): ND: Received REQ from 16
+0:0:2.128664235 DEBUG (17): RX len=28 proto=1 from=16
+0:0:2.128664235 DEBUG (17): ND: Added neighbor 16
+0:0:2.128664235 DEBUG (17): ND: Sent REP to 16
+0:0:2.128664235 DEBUG (17): ND: Received REQ from 16
+0:0:2.132997879 DEBUG (16): RX len=28 proto=1 from=17
+0:0:2.132997879 DEBUG (16): ND: Added neighbor 17
+0:0:2.132997879 DEBUG (16): ND: Sent REP to 17
+0:0:2.132997879 DEBUG (16): ND: Received REQ from 17
+0:0:2.132997879 DEBUG (18): RX len=28 proto=1 from=17
+0:0:2.132997879 DEBUG (18): ND: Added neighbor 17
+0:0:2.132997879 DEBUG (18): ND: Sent REP to 17
+0:0:2.132997879 DEBUG (18): ND: Received REQ from 17
+0:0:2.147402265 DEBUG (17): RX len=28 proto=1 from=18
+0:0:2.147402265 DEBUG (17): ND: Added neighbor 18
+0:0:2.147402265 DEBUG (17): ND: Sent REP to 18
+0:0:2.147402265 DEBUG (17): ND: Received REQ from 18
+0:0:2.147402265 DEBUG (19): RX len=28 proto=1 from=18
+0:0:2.147402265 DEBUG (19): ND: Added neighbor 18
+0:0:2.147402265 DEBUG (19): ND: Sent REP to 18
+0:0:2.147402265 DEBUG (19): ND: Received REQ from 18
+0:0:2.149444948 DEBUG (2): RX len=28 proto=1 from=3
+0:0:2.149444948 DEBUG (2): ND: Added neighbor 3
+0:0:2.149444948 DEBUG (2): ND: Sent REP to 3
+0:0:2.149444948 DEBUG (2): ND: Received REQ from 3
+0:0:2.149444948 DEBUG (4): RX len=28 proto=1 from=3
+0:0:2.149444948 DEBUG (4): ND: Added neighbor 3
+0:0:2.149444948 DEBUG (4): ND: Sent REP to 3
+0:0:2.149444948 DEBUG (4): ND: Received REQ from 3
+0:0:2.154174935 DEBUG (2): RX len=28 proto=2 from=1
+0:0:2.154174935 DEBUG (2): ND: Received REP from 1
+0:0:2.158310426 DEBUG (3): RX len=28 proto=1 from=4
+0:0:2.158310426 DEBUG (3): ND: Added neighbor 4
+0:0:2.158310426 DEBUG (3): ND: Sent REP to 4
+0:0:2.158310426 DEBUG (3): ND: Received REQ from 4
+0:0:2.158356375 DEBUG (6): RX len=28 proto=1 from=5
+0:0:2.158356375 DEBUG (6): ND: Added neighbor 5
+0:0:2.158356375 DEBUG (6): ND: Sent REP to 5
+0:0:2.158356375 DEBUG (6): ND: Received REQ from 5
+0:0:2.160645685 DEBUG (10): RX len=28 proto=2 from=9
+0:0:2.160645685 DEBUG (10): ND: Received REP from 9
+0:0:2.170746613 DEBUG (5): RX len=28 proto=1 from=6
+0:0:2.170746613 DEBUG (5): ND: Added neighbor 6
+0:0:2.170746613 DEBUG (5): ND: Sent REP to 6
+0:0:2.170746613 DEBUG (5): ND: Received REQ from 6
+0:0:2.170746613 DEBUG (7): RX len=28 proto=1 from=6
+0:0:2.170746613 DEBUG (7): ND: Added neighbor 6
+0:0:2.170746613 DEBUG (7): ND: Sent REP to 6
+0:0:2.170746613 DEBUG (7): ND: Received REQ from 6
+0:0:2.171601633 DEBUG (9): RX len=28 proto=2 from=10
+0:0:2.171601633 DEBUG (9): ND: Received REP from 10
+0:0:2.181795713 DEBUG (18): RX len=28 proto=2 from=19
+0:0:2.181795713 DEBUG (18): ND: Received REP from 19
+0:0:2.199371878 DEBUG (3): RX len=28 proto=2 from=4
+0:0:2.199371878 DEBUG (3): ND: Received REP from 4
+0:0:2.204346070 DEBUG (2): RX len=28 proto=2 from=3
+0:0:2.204346070 DEBUG (2): ND: Received REP from 3
+0:0:2.224671884 DEBUG (10): RX len=28 proto=1 from=11
+0:0:2.224671884 DEBUG (10): ND: Added neighbor 11
+0:0:2.224671884 DEBUG (10): ND: Sent REP to 11
+0:0:2.224671884 DEBUG (10): ND: Received REQ from 11
+0:0:2.224671884 DEBUG (12): RX len=28 proto=1 from=11
+0:0:2.224671884 DEBUG (12): ND: Added neighbor 11
+0:0:2.224671884 DEBUG (12): ND: Sent REP to 11
+0:0:2.224671884 DEBUG (12): ND: Received REQ from 11
+0:0:2.225494782 DEBUG (4): RX len=28 proto=2 from=3
+0:0:2.225494782 DEBUG (4): ND: Received REP from 3
+0:0:2.235963495 DEBUG (11): RX len=28 proto=1 from=12
+0:0:2.235963495 DEBUG (11): ND: Added neighbor 12
+0:0:2.235963495 DEBUG (11): ND: Sent REP to 12
+0:0:2.235963495 DEBUG (11): ND: Received REQ from 12
+0:0:2.235963495 DEBUG (13): RX len=28 proto=1 from=12
+0:0:2.235963495 DEBUG (13): ND: Added neighbor 12
+0:0:2.235963495 DEBUG (13): ND: Sent REP to 12
+0:0:2.235963495 DEBUG (13): ND: Received REQ from 12
+0:0:2.242769049 DEBUG (12): RX len=28 proto=1 from=13
+0:0:2.242769049 DEBUG (12): ND: Added neighbor 13
+0:0:2.242769049 DEBUG (12): ND: Sent REP to 13
+0:0:2.242769049 DEBUG (12): ND: Received REQ from 13
+0:0:2.242769049 DEBUG (14): RX len=28 proto=1 from=13
+0:0:2.242769049 DEBUG (14): ND: Added neighbor 13
+0:0:2.242769049 DEBUG (14): ND: Sent REP to 13
+0:0:2.242769049 DEBUG (14): ND: Received REQ from 13
+0:0:2.243042245 DEBUG (1): RX len=28 proto=2 from=2
+0:0:2.243042245 DEBUG (1): ND: Received REP from 2
+0:0:2.247819852 DEBUG (13): RX len=28 proto=1 from=14
+0:0:2.247819852 DEBUG (13): ND: Added neighbor 14
+0:0:2.247819852 DEBUG (13): ND: Sent REP to 14
+0:0:2.247819852 DEBUG (13): ND: Received REQ from 14
+0:0:2.247819852 DEBUG (15): RX len=28 proto=1 from=14
+0:0:2.247819852 DEBUG (15): ND: Added neighbor 14
+0:0:2.247819852 DEBUG (15): ND: Sent REP to 14
+0:0:2.247819852 DEBUG (15): ND: Received REQ from 14
+0:0:2.249773087 DEBUG (16): RX len=28 proto=2 from=15
+0:0:2.249773087 DEBUG (16): ND: Received REP from 15
+0:0:2.256195741 DEBUG (6): RX len=28 proto=2 from=5
+0:0:2.256195741 DEBUG (6): ND: Received REP from 5
+0:0:2.274323800 DEBUG (11): RX len=28 proto=2 from=10
+0:0:2.274323800 DEBUG (11): ND: Received REP from 10
+0:0:2.280396530 DEBUG (7): RX len=28 proto=2 from=8
+0:0:2.280396530 DEBUG (7): ND: Received REP from 8
+0:0:2.280885614 DEBUG (15): RX len=28 proto=2 from=14
+0:0:2.280885614 DEBUG (15): ND: Received REP from 14
+0:0:2.291124699 DEBUG (16): RX len=28 proto=2 from=17
+0:0:2.291124699 DEBUG (16): ND: Received REP from 17
+0:0:2.298829335 DEBUG (2): A Command has been Issued.
+0:0:2.298829335 DEBUG (2): Command Type: Ping
+0:0:2.298829335 DEBUG (2): Cmd.ping received: dest 3
+0:0:2.298829335 DEBUG (2): Ping sent via LS nextHop=0 seq=0
+0:0:2.320237136 DEBUG (8): RX len=28 proto=2 from=7
+0:0:2.320237136 DEBUG (8): ND: Received REP from 7
+0:0:2.335222448 DEBUG (15): RX len=28 proto=2 from=16
+0:0:2.335222448 DEBUG (15): ND: Received REP from 16
+0:0:2.348450499 DEBUG (7): RX len=28 proto=2 from=6
+0:0:2.348450499 DEBUG (7): ND: Received REP from 6
+0:0:2.386675359 DEBUG (19): RX len=28 proto=2 from=18
+0:0:2.386675359 DEBUG (19): ND: Received REP from 18
+0:0:2.390352300 DEBUG (14): RX len=28 proto=2 from=15
+0:0:2.390352300 DEBUG (14): ND: Received REP from 15
+0:0:2.402498705 DEBUG (17): RX len=28 proto=2 from=18
+0:0:2.402498705 DEBUG (17): ND: Received REP from 18
+0:0:2.419082876 DEBUG (3): RX len=28 proto=2 from=2
+0:0:2.419082876 DEBUG (3): ND: Received REP from 2
+0:0:2.424287321 DEBUG (10): RX len=28 proto=2 from=11
+0:0:2.424287321 DEBUG (10): ND: Received REP from 11
+0:0:2.449343088 DEBUG (18): RX len=28 proto=2 from=17
+0:0:2.449343088 DEBUG (18): ND: Received REP from 17
+0:0:2.474733169 DEBUG (12): RX len=28 proto=2 from=13
+0:0:2.474733169 DEBUG (12): ND: Received REP from 13
+0:0:2.480882847 DEBUG (17): RX len=28 proto=2 from=16
+0:0:2.480882847 DEBUG (17): ND: Received REP from 16
+0:0:2.506211354 DEBUG (9): RX len=28 proto=2 from=8
+0:0:2.506211354 DEBUG (9): ND: Received REP from 8
+0:0:2.518647802 DEBUG (11): RX len=28 proto=2 from=12
+0:0:2.518647802 DEBUG (11): ND: Received REP from 12
+0:0:2.530839444 DEBUG (12): RX len=28 proto=2 from=11
+0:0:2.530839444 DEBUG (12): ND: Received REP from 11
+0:0:2.540482455 DEBUG (6): RX len=28 proto=2 from=7
+0:0:2.540482455 DEBUG (6): ND: Received REP from 7
+0:0:2.544998976 DEBUG (5): RX len=28 proto=2 from=6
+0:0:2.544998976 DEBUG (5): ND: Received REP from 6
+0:0:2.555437034 DEBUG (13): RX len=28 proto=2 from=14
+0:0:2.555437034 DEBUG (13): ND: Received REP from 14
+0:0:2.742753784 DEBUG (14): RX len=28 proto=2 from=13
+0:0:2.742753784 DEBUG (14): ND: Received REP from 13
+0:0:2.765855471 DEBUG (13): RX len=28 proto=2 from=12
+0:0:2.765855471 DEBUG (13): ND: Received REP from 12
+0:0:3.980346921 DEBUG (1): RX len=28 proto=1 from=2
+0:0:3.980346921 DEBUG (1): ND: Sent REP to 2
+0:0:3.980346921 DEBUG (1): ND: Received REQ from 2
+0:0:3.996462182 DEBUG (16): RX len=28 proto=1 from=17
+0:0:3.996462182 DEBUG (16): ND: Sent REP to 17
+0:0:3.996462182 DEBUG (16): ND: Received REQ from 17
+0:0:3.997635531 DEBUG (6): RX len=28 proto=1 from=5
+0:0:3.997635531 DEBUG (6): ND: Sent REP to 5
+0:0:3.997635531 DEBUG (6): ND: Received REQ from 5
+0:0:4.024934721 DEBUG (15): RX len=28 proto=1 from=14
+0:0:4.024934721 DEBUG (15): ND: Sent REP to 14
+0:0:4.024934721 DEBUG (15): ND: Received REQ from 14
+0:0:4.025681830 DEBUG (9): RX len=28 proto=1 from=10
+0:0:4.025681830 DEBUG (9): ND: Sent REP to 10
+0:0:4.025681830 DEBUG (9): ND: Received REQ from 10
+0:0:4.034639828 DEBUG (19): RX len=28 proto=1 from=18
+0:0:4.034639828 DEBUG (19): ND: Sent REP to 18
+0:0:4.034639828 DEBUG (19): ND: Received REQ from 18
+0:0:4.050690083 DEBUG (2): RX len=28 proto=1 from=3
+0:0:4.050690083 DEBUG (2): ND: Sent REP to 3
+0:0:4.050690083 DEBUG (2): ND: Received REQ from 3
+0:0:4.053040490 DEBUG (8): RX len=28 proto=1 from=7
+0:0:4.053040490 DEBUG (8): ND: Sent REP to 7
+0:0:4.053040490 DEBUG (8): ND: Received REQ from 7
+0:0:4.061219721 DEBUG (10): RX len=28 proto=1 from=11
+0:0:4.061219721 DEBUG (10): ND: Sent REP to 11
+0:0:4.061219721 DEBUG (10): ND: Received REQ from 11
+0:0:4.069780419 DEBUG (16): RX len=28 proto=1 from=15
+0:0:4.069780419 DEBUG (16): ND: Sent REP to 15
+0:0:4.069780419 DEBUG (16): ND: Received REQ from 15
+0:0:4.070971165 DEBUG (18): RX len=28 proto=1 from=19
+0:0:4.070971165 DEBUG (18): ND: Sent REP to 19
+0:0:4.070971165 DEBUG (18): ND: Received REQ from 19
+0:0:4.093216453 DEBUG (3): RX len=28 proto=1 from=4
+0:0:4.093216453 DEBUG (3): ND: Sent REP to 4
+0:0:4.093216453 DEBUG (3): ND: Received REQ from 4
+0:0:4.093384329 DEBUG (1): A Command has been Issued.
+0:0:4.093384329 DEBUG (1): Command Type: Ping
+0:0:4.093384329 DEBUG (1): Cmd.ping received: dest 10
+0:0:4.093384329 DEBUG (1): Ping sent via LS nextHop=0 seq=0
+0:0:4.100663266 DEBUG (7): RX len=28 proto=1 from=8
+0:0:4.100663266 DEBUG (7): ND: Sent REP to 8
+0:0:4.100663266 DEBUG (7): ND: Received REQ from 8
+0:0:4.100755385 DEBUG (11): RX len=28 proto=1 from=12
+0:0:4.100755385 DEBUG (11): ND: Sent REP to 12
+0:0:4.100755385 DEBUG (11): ND: Received REQ from 12
+0:0:4.107256165 DEBUG (15): RX len=28 proto=1 from=16
+0:0:4.107256165 DEBUG (15): ND: Sent REP to 16
+0:0:4.107256165 DEBUG (15): ND: Received REQ from 16
+0:0:4.115250703 DEBUG (9): RX len=28 proto=1 from=8
+0:0:4.115250703 DEBUG (9): ND: Sent REP to 8
+0:0:4.115250703 DEBUG (9): ND: Received REQ from 8
+0:0:4.116746560 DEBUG (13): RX len=28 proto=1 from=12
+0:0:4.116746560 DEBUG (13): ND: Sent REP to 12
+0:0:4.116746560 DEBUG (13): ND: Received REQ from 12
+0:0:4.124041220 DEBUG (18): RX len=28 proto=2 from=19
+0:0:4.124041220 DEBUG (18): ND: Received REP from 19
+0:0:4.130418852 DEBUG (14): RX len=28 proto=1 from=15
+0:0:4.130418852 DEBUG (14): ND: Sent REP to 15
+0:0:4.130418852 DEBUG (14): ND: Received REQ from 15
+0:0:4.138351538 DEBUG (2): RX len=28 proto=1 from=1
+0:0:4.138351538 DEBUG (2): ND: Sent REP to 1
+0:0:4.138351538 DEBUG (2): ND: Received REQ from 1
+0:0:4.143525900 DEBUG (12): RX len=28 proto=1 from=13
+0:0:4.143525900 DEBUG (12): ND: Sent REP to 13
+0:0:4.143525900 DEBUG (12): ND: Received REQ from 13
+0:0:4.145005426 DEBUG (8): RX len=28 proto=1 from=9
+0:0:4.145005426 DEBUG (8): ND: Sent REP to 9
+0:0:4.145005426 DEBUG (8): ND: Received REQ from 9
+0:0:4.154373398 DEBUG (3): RX len=28 proto=1 from=2
+0:0:4.154373398 DEBUG (3): ND: Sent REP to 2
+0:0:4.154373398 DEBUG (3): ND: Received REQ from 2
+0:0:4.175873165 DEBUG (4): RX len=28 proto=1 from=3
+0:0:4.175873165 DEBUG (4): ND: Sent REP to 3
+0:0:4.175873165 DEBUG (4): ND: Received REQ from 3
+0:0:4.178406526 DEBUG (7): RX len=28 proto=1 from=6
+0:0:4.178406526 DEBUG (7): ND: Sent REP to 6
+0:0:4.178406526 DEBUG (7): ND: Received REQ from 6
+0:0:4.185258261 DEBUG (11): RX len=28 proto=1 from=10
+0:0:4.185258261 DEBUG (11): ND: Sent REP to 10
+0:0:4.185258261 DEBUG (11): ND: Received REQ from 10
+0:0:4.195177412 DEBUG (18): RX len=28 proto=1 from=17
+0:0:4.195177412 DEBUG (18): ND: Sent REP to 17
+0:0:4.195177412 DEBUG (18): ND: Received REQ from 17
+0:0:4.213029277 DEBUG (11): RX len=28 proto=2 from=10
+0:0:4.213029277 DEBUG (11): ND: Received REP from 10
+0:0:4.231675378 DEBUG (10): RX len=28 proto=1 from=9
+0:0:4.231675378 DEBUG (10): ND: Sent REP to 9
+0:0:4.231675378 DEBUG (10): ND: Received REQ from 9
+0:0:4.244600493 DEBUG (17): RX len=28 proto=1 from=16
+0:0:4.244600493 DEBUG (17): ND: Sent REP to 16
+0:0:4.244600493 DEBUG (17): ND: Received REQ from 16
+0:0:4.253801007 DEBUG (13): RX len=28 proto=2 from=12
+0:0:4.253801007 DEBUG (13): ND: Received REP from 12
+0:0:4.270357361 DEBUG (17): RX len=28 proto=2 from=16
+0:0:4.270357361 DEBUG (17): ND: Received REP from 16
+0:0:4.292297874 DEBUG (3): RX len=28 proto=2 from=4
+0:0:4.292297874 DEBUG (3): ND: Received REP from 4
+0:0:4.296937475 DEBUG (12): RX len=28 proto=1 from=11
+0:0:4.296937475 DEBUG (12): ND: Sent REP to 11
+0:0:4.296937475 DEBUG (12): ND: Received REQ from 11
+0:0:4.301270441 DEBUG (6): RX len=28 proto=1 from=7
+0:0:4.301270441 DEBUG (6): ND: Sent REP to 7
+0:0:4.301270441 DEBUG (6): ND: Received REQ from 7
+0:0:4.310213546 DEBUG (17): RX len=28 proto=1 from=18
+0:0:4.310213546 DEBUG (17): ND: Sent REP to 18
+0:0:4.310213546 DEBUG (17): ND: Received REQ from 18
+0:0:4.314485471 DEBUG (13): RX len=28 proto=1 from=14
+0:0:4.314485471 DEBUG (13): ND: Sent REP to 14
+0:0:4.314485471 DEBUG (13): ND: Received REQ from 14
+0:0:4.324419104 DEBUG (14): RX len=28 proto=2 from=15
+0:0:4.324419104 DEBUG (14): ND: Received REP from 15
+0:0:4.341858979 DEBUG (7): RX len=28 proto=2 from=8
+0:0:4.341858979 DEBUG (7): ND: Received REP from 8
+0:0:4.351853178 DEBUG (5): RX len=28 proto=1 from=6
+0:0:4.351853178 DEBUG (5): ND: Sent REP to 6
+0:0:4.351853178 DEBUG (5): ND: Received REQ from 6
+0:0:4.357393632 DEBUG (16): RX len=28 proto=2 from=17
+0:0:4.357393632 DEBUG (16): ND: Received REP from 17
+0:0:4.360994140 DEBUG (14): RX len=28 proto=1 from=13
+0:0:4.360994140 DEBUG (14): ND: Sent REP to 13
+0:0:4.360994140 DEBUG (14): ND: Received REQ from 13
+0:0:4.364258215 DEBUG (4): RX len=28 proto=2 from=3
+0:0:4.364258215 DEBUG (4): ND: Received REP from 3
+0:0:4.394349609 DEBUG (12): RX len=28 proto=2 from=11
+0:0:4.394349609 DEBUG (12): ND: Received REP from 11
+0:0:4.394593220 DEBUG (8): RX len=28 proto=2 from=7
+0:0:4.394593220 DEBUG (8): ND: Received REP from 7
+0:0:4.401337050 DEBUG (2): RX len=28 proto=2 from=3
+0:0:4.401337050 DEBUG (2): ND: Received REP from 3
+0:0:4.413040252 DEBUG (2): RX len=28 proto=2 from=1
+0:0:4.413040252 DEBUG (2): ND: Received REP from 1
+0:0:4.424882404 DEBUG (10): RX len=28 proto=2 from=11
+0:0:4.424882404 DEBUG (10): ND: Received REP from 11
+0:0:4.427170982 DEBUG (10): RX len=28 proto=2 from=9
+0:0:4.427170982 DEBUG (10): ND: Received REP from 9
+0:0:4.434038648 DEBUG (19): RX len=28 proto=2 from=18
+0:0:4.434038648 DEBUG (19): ND: Received REP from 18
+0:0:4.443680054 DEBUG (3): RX len=28 proto=2 from=2
+0:0:4.443680054 DEBUG (3): ND: Received REP from 2
+0:0:4.447969921 DEBUG (17): RX len=28 proto=2 from=18
+0:0:4.447969921 DEBUG (17): ND: Received REP from 18
+0:0:4.457291972 DEBUG (9): RX len=28 proto=2 from=10
+0:0:4.457291972 DEBUG (9): ND: Received REP from 10
+0:0:4.461808941 DEBUG (12): RX len=28 proto=2 from=13
+0:0:4.461808941 DEBUG (12): ND: Received REP from 13
+0:0:4.463639231 DEBUG (6): RX len=28 proto=2 from=7
+0:0:4.463639231 DEBUG (6): ND: Received REP from 7
+0:0:4.464479498 DEBUG (16): RX len=28 proto=2 from=15
+0:0:4.464479498 DEBUG (16): ND: Received REP from 15
+0:0:4.506622545 DEBUG (1): RX len=28 proto=2 from=2
+0:0:4.506622545 DEBUG (1): ND: Received REP from 2
+0:0:4.514390202 DEBUG (8): RX len=28 proto=2 from=9
+0:0:4.514390202 DEBUG (8): ND: Received REP from 9
+0:0:4.515824948 DEBUG (11): RX len=28 proto=2 from=12
+0:0:4.515824948 DEBUG (11): ND: Received REP from 12
+0:0:4.516878453 DEBUG (18): RX len=28 proto=2 from=17
+0:0:4.516878453 DEBUG (18): ND: Received REP from 17
+0:0:4.536851829 DEBUG (15): RX len=28 proto=2 from=14
+0:0:4.536851829 DEBUG (15): ND: Received REP from 14
+0:0:4.564057468 DEBUG (9): RX len=28 proto=2 from=8
+0:0:4.564057468 DEBUG (9): ND: Received REP from 8
+0:0:4.565187655 DEBUG (15): RX len=28 proto=2 from=16
+0:0:4.565187655 DEBUG (15): ND: Received REP from 16
+0:0:4.577317990 DEBUG (14): RX len=28 proto=2 from=13
+0:0:4.577317990 DEBUG (14): ND: Received REP from 13
+0:0:4.605591628 DEBUG (5): RX len=28 proto=2 from=6
+0:0:4.605591628 DEBUG (5): ND: Received REP from 6
+0:0:4.625397350 DEBUG (6): RX len=28 proto=2 from=5
+0:0:4.625397350 DEBUG (6): ND: Received REP from 5

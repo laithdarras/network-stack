@@ -1,32 +1,31 @@
 from TestSim import TestSim
 
 def main():
-    # Get simulation ready to run.
-    s = TestSim();
+    s = TestSim()
 
-    # Before we do anything, lets simulate the network off.
-    s.runTime(1);
+    # Load network layout and noise model
+    s.loadTopo("long_line.topo")
+    s.loadNoise("no_noise.txt")
+    s.bootAll()
 
-    # Load the the layout of the network.
-    s.loadTopo("long_line.topo");
+    # Add logging channels
+    s.addChannel(s.COMMAND_CHANNEL)
+    s.addChannel(s.GENERAL_CHANNEL)
+    s.addChannel(s.ROUTING_CHANNEL)
+    s.addChannel(s.FLOODING_CHANNEL)
 
-    # Add a noise model to all of the motes.
-    s.loadNoise("no_noise.txt");
+    # Let neighbor discovery + link state run for a bit
+    s.runTime(10)
 
-    # Turn on all of the sensors.
-    s.bootAll();
+    # Dump routing table for node 1
+    print("\n=== ROUTING TABLE DUMP (B4 LSAs) ===")
+    s.routeDMP(1)
+    s.runTime(10)
 
-    # Add the main channels. These channels are declared in includes/channels.h
-    s.addChannel(s.COMMAND_CHANNEL);
-    s.addChannel(s.GENERAL_CHANNEL);
-
-    # After sending a ping, simulate a little to prevent collision.
-    s.runTime(1);
-    s.ping(2, 3, "Hello, World");
-    s.runTime(1);
-
-    s.ping(1, 10, "Hi!");
-    s.runTime(1);
+    # Let LSAs propagte and recompute routes
+    print("\n=== ROUTING TABLE DUMP (AFTER LSAs) ===")
+    s.routeDMP(1)
+    s.runTime(5)
 
 if __name__ == '__main__':
     main()

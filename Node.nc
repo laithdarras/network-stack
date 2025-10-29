@@ -87,7 +87,18 @@ implementation{
       // Create flood packet
       makePack(&sendPackage, TOS_NODE_ID, destination, MAX_TTL, 0, floodSeq++, payload, PACKET_MAX_PAYLOAD_SIZE);
       
-      // Send via flooding
+      // Try LS routing first
+      {
+         uint16_t nh = call LS.nextHop(destination);
+         if (nh != 0xFFFF) {
+            if (call SS.send(sendPackage, nh) == SUCCESS) {
+               dbg(GENERAL_CHANNEL, "Ping sent via LS nextHop=%d seq=%d\n", nh, sendPackage.seq);
+               return;
+            }
+         }
+      }
+
+      // Fallback: flood
       if(call Flood.send(sendPackage, destination) == SUCCESS) {
          dbg(GENERAL_CHANNEL, "Ping sent via flooding seq=%d\n", sendPackage.seq);
       } else {
@@ -108,7 +119,10 @@ implementation{
       call ND.printNeighbors();
    }
 
-   event void Cmd.printRouteTable(){}
+   event void Cmd.printRouteTable(){
+      dbg(COMMAND_CHANNEL, "Cmd: printRouteTable\n");
+      call LS.printRouteTable();
+   }
    event void Cmd.printLinkState(){}
    event void Cmd.printDistanceVector(){}
    event void Cmd.setTestServer(){}

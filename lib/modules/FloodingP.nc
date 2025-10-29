@@ -144,7 +144,11 @@ implementation {
       msg.protocol = FLOOD_PROTOCOL;
       if (msg.TTL == 0) msg.TTL = MAX_TTL;
       updateDupEntry(msg.src, msg.seq);    // Update own entry to prevent re-receiving own flood packets
-      dbg(FLOODING_CHANNEL, "Flood: Originating seq=%d TTL=%d\n", msg.seq, msg.TTL);
+      if (msg.payload[0]=='L' && msg.payload[1]=='S' && msg.payload[2]=='A') {
+         dbg(FLOODING_CHANNEL, "Flooding: Sending LSA from %d seq=%d TTL=%d\n", msg.src, msg.seq, msg.TTL);
+      } else {
+         dbg(FLOODING_CHANNEL, "Flood: Originating seq=%d TTL=%d\n", msg.seq, msg.TTL);
+      }
       forwardPerLink(&msg, 0xFFFF);  // Broadcast to all neighbors, so inbound is invalid
       return SUCCESS;
    }
@@ -165,6 +169,9 @@ implementation {
          return;
       }
       updateDupEntry(pkt->src, pkt->seq);
+      if (pkt->payload[0]=='L' && pkt->payload[1]=='S' && pkt->payload[2]=='A') {
+         dbg(FLOODING_CHANNEL, "Flooding: Forwarding LSA from %d seq=%d\n", pkt->src, pkt->seq);
+      }
       signal Flooding.receive(*pkt, from);
       forwardPerLink(pkt, from);
    }
