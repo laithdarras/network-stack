@@ -25,6 +25,7 @@ module Node{
    uses interface Timer<TMilli> as NDTimer;  // Timer for ND module
 
    uses interface Flooding as Flood;       // Flooding - Project 1
+   uses interface LinkState as LS;         // Link-State Routing - Project 2
 }
 
 implementation{
@@ -46,6 +47,7 @@ implementation{
          dbg(GENERAL_CHANNEL, "Radio On - starting ND and Flooding\n");   // Show radio message
          call ND.start();
          call Flood.start();
+         call LS.start();
       }else{
          // Retry until successful
          call AMControl.start();
@@ -63,6 +65,8 @@ implementation{
       if(myMsg->protocol == 1 || myMsg->protocol == 2) {    // ND REQ/ND REP
          call ND.onReceive(myMsg, inbound);
       } else if(myMsg->protocol == 3) {   // FLOOD
+         call Flood.onReceive(myMsg, inbound);
+      } else if(myMsg->protocol == 4) {   // Link-State
          call Flood.onReceive(myMsg, inbound);
       } else {
          dbg(GENERAL_CHANNEL, "Unknown protocol %d from %d\n", myMsg->protocol, inbound);

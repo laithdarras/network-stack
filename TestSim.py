@@ -139,7 +139,7 @@ def main():
     s.addChannel(s.COMMAND_CHANNEL) # This channel is used to send commands to the nodes
     # s.addChannel(s.GENERAL_CHANNEL) # This channel includes ALL messages
     s.addChannel(s.FLOODING_CHANNEL)  # This channel is used for flooding messages only
-    # s.addChannel(s.NEIGHBOR_CHANNEL)   # This channel is used for neighbor discovery messages only
+    s.addChannel(s.NEIGHBOR_CHANNEL)   # This channel is used for neighbor discovery messages only
 
     s.runTime(20)
     s.ping(1, 2, "Hello, World")
@@ -151,17 +151,17 @@ def main():
     s.neighborDMP(5)
     s.runTime(3)
 
-    s.ping(3, 18, "Test 1")
+    s.ping(3, 15, "Test 1")
     s.runTime(60)
 
     s.moteOff(5)
-    s.runTime(3)
+    s.runTime(30)
 
     s.ping(4, 7, "Test 2")
     s.runTime(60)
 
     s.neighborDMP(6)
-    s.runTime(3)
+    s.runTime(30)
 
 
 if __name__ == '__main__':

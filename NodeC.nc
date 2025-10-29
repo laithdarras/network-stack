@@ -34,12 +34,17 @@ implementation {
     components new TimerMilliC();
     Node.NDTimer -> TimerMilliC;
 
-    // Neighbor Discovery module
-    components new NeighborDiscoveryC(AM_PACK) as NeighborDiscoveryC;
-    Node.ND -> NeighborDiscoveryC;
+    // Neighbor Discovery module (shared instance)
+    components new NeighborDiscoveryC(6) as NeighborDiscoveryC;
+    Node.ND -> NeighborDiscoveryC.NeighborDiscovery;
 
     // Flooding module
     components FloodingC;
-    Node.Flood -> FloodingC;
-    FloodingC.NeighborDiscovery -> NeighborDiscoveryC;
+    Node.Flood -> FloodingC.Flooding;
+    FloodingC.NeighborDiscovery -> NeighborDiscoveryC.NeighborDiscovery;
+
+    // Link-State Routing module
+    components LinkStateC;
+    Node.LS -> LinkStateC.LinkState;
+    LinkStateC.NeighborDiscovery -> NeighborDiscoveryC.NeighborDiscovery;
 }
