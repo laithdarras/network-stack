@@ -39,12 +39,12 @@ implementation{
    event void Boot.booted(){
       call AMControl.start();
 
-      dbg(GENERAL_CHANNEL, "Node %d booted; starting protocols\n", TOS_NODE_ID);  // Show node boot message
+      // dbg(GENERAL_CHANNEL, "Node %d booted; starting protocols\n", TOS_NODE_ID);  // Show node boot message
    }
 
    event void AMControl.startDone(error_t err){
       if(err == SUCCESS){
-         dbg(GENERAL_CHANNEL, "Radio On - starting ND and Flooding\n");   // Show radio message
+         // dbg(GENERAL_CHANNEL, "Radio On - starting ND and Flooding\n");   // Show radio message
          call ND.start();
          call Flood.start();
          call LS.start();
@@ -60,7 +60,7 @@ implementation{
    event message_t* Receive.receive(message_t* msg, void* payload, uint8_t len){
       pack* myMsg = (pack*) payload;
       uint16_t inbound = call AMPacket.source(msg);
-      dbg(GENERAL_CHANNEL, "RX len=%d proto=%d from=%d\n", len, myMsg->protocol, inbound);
+      // dbg(GENERAL_CHANNEL, "RX len=%d proto=%d from=%d\n", len, myMsg->protocol, inbound);
 
       if(myMsg->protocol == 1 || myMsg->protocol == 2) {    // ND REQ/ND REP
          call ND.onReceive(myMsg, inbound);
@@ -69,14 +69,33 @@ implementation{
       } else if(myMsg->protocol == 4) {   // Link-State
          call Flood.onReceive(myMsg, inbound);
       } else {
-         dbg(GENERAL_CHANNEL, "Unknown protocol %d from %d\n", myMsg->protocol, inbound);
+         // Regular data packet - route or deliver
+         if(myMsg->dest == TOS_NODE_ID) {
+            // Packet is for this node - deliver locally
+            dbg(GENERAL_CHANNEL, "Ping received from %d\n", myMsg->src);
+         } else if(myMsg->dest == 0xFFFF) {
+            // Broadcast - flood it
+            call Flood.onReceive(myMsg, inbound);
+         } else {
+            // Packet is for another node - route it using routing table
+            uint16_t nh = call LS.nextHop(myMsg->dest);
+            if (nh != 0xFFFF) {
+               if (call SS.send(*myMsg, nh) == SUCCESS) {
+                  // dbg(GENERAL_CHANNEL, "Routed packet dest=%d via nextHop=%d\n", myMsg->dest, nh);
+               } else {
+                  // dbg(GENERAL_CHANNEL, "Route failed for dest=%d\n", myMsg->dest);
+               }
+            } else {
+               // dbg(GENERAL_CHANNEL, "No route to dest=%d, dropping\n", myMsg->dest);
+            }
+         }
       }
       return msg;
    }
 
    // Timer for periodic operations
    event void NDTimer.fired(){
-      dbg(GENERAL_CHANNEL, "Node %d periodic timer\n", TOS_NODE_ID);
+      // dbg(GENERAL_CHANNEL, "Node %d periodic timer\n", TOS_NODE_ID);
       call NDTimer.startOneShot(5000);  // 5 second intervals
    }
 
@@ -97,7 +116,7 @@ implementation{
             }
          }
       }
-
+   // this needs to be more efficient approach using ip instead of flooding every time which is costly.
       // Fallback: flood
       if(call Flood.send(sendPackage, destination) == SUCCESS) {
          dbg(GENERAL_CHANNEL, "Ping sent via flooding seq=%d\n", sendPackage.seq);
@@ -108,10 +127,10 @@ implementation{
 
    // Handle flood receive events
    event void Flood.receive(pack msg, uint16_t from) {
-      dbg(GENERAL_CHANNEL, "Flood received: src=%d seq=%d from=%d TTL=%d\n", 
-           msg.src, msg.seq, from, msg.TTL);
+      // dbg(GENERAL_CHANNEL, "Flood received: src=%d seq=%d from=%d TTL=%d\n", 
+      //      msg.src, msg.seq, from, msg.TTL);
       if(msg.dest == TOS_NODE_ID) {
-         dbg(GENERAL_CHANNEL, "Flood packet for me: %s\n", msg.payload);
+         dbg(GENERAL_CHANNEL, "Ping received from %d\n", msg.src);
       }
    }
 
@@ -120,10 +139,14 @@ implementation{
    }
 
    event void Cmd.printRouteTable(){
-      dbg(COMMAND_CHANNEL, "Cmd: printRouteTable\n");
+      // dbg(COMMAND_CHANNEL, "Cmd: printRouteTable\n");
+      // Print LSAs first, then routing table
+      call LS.printLinkStateDB();
       call LS.printRouteTable();
    }
-   event void Cmd.printLinkState(){}
+   event void Cmd.printLinkState(){
+      call LS.printLinkStateDB();
+   }
    event void Cmd.printDistanceVector(){}
    event void Cmd.setTestServer(){}
    event void Cmd.setTestClient(){}

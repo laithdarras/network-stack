@@ -12,20 +12,21 @@ def main():
     s.addChannel(s.COMMAND_CHANNEL)
     s.addChannel(s.GENERAL_CHANNEL)
     s.addChannel(s.ROUTING_CHANNEL)
-    s.addChannel(s.FLOODING_CHANNEL)
+    # s.addChannel(s.FLOODING_CHANNEL)
 
     # Let neighbor discovery + link state run for a bit
     s.runTime(10)
 
-    # Dump routing table for node 1
-    print("\n=== ROUTING TABLE DUMP (B4 LSAs) ===")
-    s.routeDMP(1)
+    s.routeDMP(4)
     s.runTime(10)
-
-    # Let LSAs propagte and recompute routes
-    print("\n=== ROUTING TABLE DUMP (AFTER LSAs) ===")
-    s.routeDMP(1)
-    s.runTime(5)
+    s.ping(16,4,"")
+    s.runTime(10)
+    s.moteOff(9)
+    s.runTime(100)
+    s.ping(5,10,"")
+    s.runTime(10)
+    s.routeDMP(7)
+    s.runTime(10)
 
 if __name__ == '__main__':
     main()

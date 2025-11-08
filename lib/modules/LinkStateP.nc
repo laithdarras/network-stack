@@ -3,7 +3,8 @@
 #include "../../includes/channels.h"
 
 enum {
-   MAX_NEIGHBORS_LS = 10,   // Keep consistent with ND
+   MAX_NEIGHBORS_LS = 6,    // Reduced to fit in PACKET_MAX_PAYLOAD_SIZE (20 bytes)
+                             // Tag(3) + origin(2) + seqno(2) + count(1) + neighbors(6*2=12) = 20 bytes
    MAX_NODES = 20,           // Maximum nodes in network
    LSA_TAG_LEN = 3,
    LS_PROTOCOL = 4           // Link-State protocol ID
@@ -109,7 +110,7 @@ implementation {
          }
       }
       call lsaTimer.startPeriodic(5000);
-      dbg(GENERAL_CHANNEL, "LS: Booted, starting periodic LSA flooding\n");
+      // dbg(GENERAL_CHANNEL, "LS: Booted, starting periodic LSA flooding\n");
 
       // Proactively advertise once at startup so LSDBs populate early
       {
@@ -127,7 +128,7 @@ implementation {
             msg.protocol = 3; // flood
             neighborCount = msg.payload[LSA_TAG_LEN + 4];
             call Flooding.send(msg, 0xFFFF);
-            dbg(GENERAL_CHANNEL, "LS: Sent initial LSA seq=%d n=%d\n", localSeq, neighborCount);
+            // dbg(GENERAL_CHANNEL, "LS: Sent initial LSA seq=%d n=%d\n", localSeq, neighborCount);
          }
       }
    }
@@ -135,11 +136,11 @@ implementation {
    command void LinkState.stop() {
       running = FALSE;
       call lsaTimer.stop();
-      dbg(GENERAL_CHANNEL, "LS: Stopped\n");
+      // dbg(GENERAL_CHANNEL, "LS: Stopped\n");
    }
 
    command void LinkState.recomputeRoutes() {
-      dbg(GENERAL_CHANNEL, "LS: Recomputing routes\n");
+      // dbg(GENERAL_CHANNEL, "LS: Recomputing routes\n");
       computeRoutes();
       call LinkState.printRouteTable();
    }
@@ -153,15 +154,17 @@ implementation {
 
       if (!running) return;
 
-      dbg(GENERAL_CHANNEL, "LS: Timer fired, building new LSA\n");
+      // dbg(GENERAL_CHANNEL, "LS: Timer fired, building new LSA\n");
 
       // Refresh our own LSDB entry from current ND table
       updateLocalLsdbFromND();
 
       ok = buildLsaPayload((uint8_t*)msg.payload, &plen);
       if (!ok) {
+         // dbg(GENERAL_CHANNEL, "LS: Failed to build LSA payload\n");
          return;
       }
+      // dbg(GENERAL_CHANNEL, "LS: Built LSA payload len=%d\n", plen);
 
       msg.src = TOS_NODE_ID;
       msg.dest = 0xFFFF;
@@ -171,9 +174,9 @@ implementation {
 
       // Extract neighbor count from payload (after LSA tag, at offset 4 in lsa_msg_t)
       neighborCount = msg.payload[LSA_TAG_LEN + 4];
-      dbg(GENERAL_CHANNEL, "LS: Flooding LSA from %d seq=%d n=%d\n", TOS_NODE_ID, localSeq, neighborCount);
+      // dbg(GENERAL_CHANNEL, "LS: Flooding LSA from %d seq=%d n=%d\n", TOS_NODE_ID, localSeq, neighborCount);
       call Flooding.send(msg, 0xFFFF);
-      dbg(GENERAL_CHANNEL, "LS: Sent LSA seq=%d n=%d\n", localSeq, neighborCount);
+      // dbg(GENERAL_CHANNEL, "LS: Sent LSA seq=%d n=%d\n", localSeq, neighborCount);
    }
 
    // Receive Flooding packets and filter LSAs
@@ -184,7 +187,7 @@ implementation {
       if (pkt.protocol != 3) return; // Only process LSAs carried via flooding
       if (pkt.payload[0] != 'L' || pkt.payload[1] != 'S' || pkt.payload[2] != 'A') return;
       memcpy(&lsa, &pkt.payload[LSA_TAG_LEN], sizeof(lsa_msg_t));
-      dbg(GENERAL_CHANNEL, "LSA received from %d (seq=%d)\n", lsa.origin, lsa.seqno);
+      // dbg(GENERAL_CHANNEL, "LSA received from %d (seq=%d)\n", lsa.origin, lsa.seqno);
 
       e = findEntry(lsa.origin);
       if (e == NULL) {
@@ -207,12 +210,13 @@ implementation {
          for (i = 0; i < e->neighborCount; i++) {
             e->neighbors[i] = lsa.neighbors[i];
          }
-         dbg(GENERAL_CHANNEL, "LS: LSDB updated for origin=%d count=%d (seq=%d)\n", lsa.origin, e->neighborCount, lsa.seqno);
-         dbg(GENERAL_CHANNEL, "LS: Updated entry for %d seq=%d from %d\n", lsa.origin, lsa.seqno, from);
+         // dbg(GENERAL_CHANNEL, "LS: LSDB updated for origin=%d count=%d (seq=%d)\n", lsa.origin, e->neighborCount, lsa.seqno);
+         // dbg(GENERAL_CHANNEL, "LS: Updated entry for %d seq=%d from %d\n", lsa.origin, lsa.seqno, from);
 
          // Recompute routes on any update
          computeRoutes();
-         call LinkState.printRouteTable();
+         // Don't print routing table automatically - only when explicitly requested
+         // call LinkState.printRouteTable();
       }
    }
 
@@ -304,6 +308,30 @@ implementation {
          nextHop[i] = INF;
       }
    }
+   }
+
+   // Debugging: print the Link State Database (all LSAs)
+   command void LinkState.printLinkStateDB() {
+      uint8_t i;
+      uint8_t j;
+      dbg(GENERAL_CHANNEL, "lsa for node %d (%d entries):\n", TOS_NODE_ID, lsdbCount);
+      for (i = 0; i < lsdbCount; i++) {
+         if (lsdb[i].neighborCount == 0) {
+            dbg(GENERAL_CHANNEL, "  Node %d (seq=%d): neighbors=(none)\n", lsdb[i].nodeID, lsdb[i].seqno);
+         } else if (lsdb[i].neighborCount == 1) {
+            dbg(GENERAL_CHANNEL, "  Node %d (seq=%d): neighbors=%d\n", lsdb[i].nodeID, lsdb[i].seqno, lsdb[i].neighbors[0]);
+         } else if (lsdb[i].neighborCount == 2) {
+            dbg(GENERAL_CHANNEL, "  Node %d (seq=%d): neighbors=%d,%d\n", lsdb[i].nodeID, lsdb[i].seqno, lsdb[i].neighbors[0], lsdb[i].neighbors[1]);
+         } else if (lsdb[i].neighborCount == 3) {
+            dbg(GENERAL_CHANNEL, "  Node %d (seq=%d): neighbors=%d,%d,%d\n", lsdb[i].nodeID, lsdb[i].seqno, lsdb[i].neighbors[0], lsdb[i].neighbors[1], lsdb[i].neighbors[2]);
+         } else if (lsdb[i].neighborCount == 4) {
+            dbg(GENERAL_CHANNEL, "  Node %d (seq=%d): neighbors=%d,%d,%d,%d\n", lsdb[i].nodeID, lsdb[i].seqno, lsdb[i].neighbors[0], lsdb[i].neighbors[1], lsdb[i].neighbors[2], lsdb[i].neighbors[3]);
+         } else if (lsdb[i].neighborCount == 5) {
+            dbg(GENERAL_CHANNEL, "  Node %d (seq=%d): neighbors=%d,%d,%d,%d,%d\n", lsdb[i].nodeID, lsdb[i].seqno, lsdb[i].neighbors[0], lsdb[i].neighbors[1], lsdb[i].neighbors[2], lsdb[i].neighbors[3], lsdb[i].neighbors[4]);
+         } else {
+            dbg(GENERAL_CHANNEL, "  Node %d (seq=%d): neighbors=%d,%d,%d,%d,%d,%d\n", lsdb[i].nodeID, lsdb[i].seqno, lsdb[i].neighbors[0], lsdb[i].neighbors[1], lsdb[i].neighbors[2], lsdb[i].neighbors[3], lsdb[i].neighbors[4], lsdb[i].neighbors[5]);
+         }
+      }
    }
 
    // Debugging: print the routing table

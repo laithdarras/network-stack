@@ -62,7 +62,7 @@ implementation {
          neighbors[numNeighbors].missedCount = 0;
          neighbors[numNeighbors].recentlySeen = TRUE;
          numNeighbors++;
-         dbg(GENERAL_CHANNEL, "ND: Added neighbor %d\n", addr);
+         // dbg(GENERAL_CHANNEL, "ND: Added neighbor %d\n", addr);
       } else if (n != NULL) {
          // Update existing neighbor
          n->active = TRUE;
@@ -86,7 +86,7 @@ implementation {
          call SS.send(req, 0xFFFF);
          if ((req.seq % 10) == 0) {
             // Display every 10th REQ for debugging to reduce console spam
-            dbg(GENERAL_CHANNEL, "ND: Sent REQ seq=%d\n", req.seq);
+            // dbg(GENERAL_CHANNEL, "ND: Sent REQ seq=%d\n", req.seq);
          }
       } else {
          // Send REQ to all known neighbors
@@ -103,7 +103,7 @@ implementation {
                call SS.send(req2, neighbors[i].addr);
                neighbors[i].numReqSentTo++;
                if ((req2.seq % 10) == 0) {
-                  dbg(GENERAL_CHANNEL, "ND: Sent REQ to %d seq=%d\n", neighbors[i].addr, req2.seq);
+                  // dbg(GENERAL_CHANNEL, "ND: Sent REQ to %d seq=%d\n", neighbors[i].addr, req2.seq);
                }
             }
          }
@@ -120,7 +120,7 @@ implementation {
       rep.protocol = ND_REP_TYPE;
       memcpy(rep.payload, "ND_REP", 6);
       call SS.send(rep, dest);
-      dbg(GENERAL_CHANNEL, "ND: Sent REP to %d\n", dest);
+      // dbg(GENERAL_CHANNEL, "ND: Sent REP to %d\n", dest);
    }
 
 
@@ -142,7 +142,7 @@ implementation {
             if (neighbors[i].missedCount < 255) neighbors[i].missedCount++;     // 255 is max for uint8_t
             if (neighbors[i].missedCount > ND_MISS_THRESHOLD) {          // Deactivate after threshold (5 periods)
                neighbors[i].active = FALSE;
-               dbg(GENERAL_CHANNEL, "ND: Aged out neighbor %d\n", neighbors[i].addr);
+               // dbg(GENERAL_CHANNEL, "ND: Aged out neighbor %d\n", neighbors[i].addr);
             }
          }
       }
@@ -171,7 +171,7 @@ implementation {
       reqSeq = 0;
       call neighborTimer.startPeriodic(ND_REQ_INTERVAL);
       call ageTimer.startPeriodic(ND_REQ_INTERVAL); // age at the same cadence as beacons
-      dbg(GENERAL_CHANNEL, "ND: Started\n");
+      // dbg(GENERAL_CHANNEL, "ND: Started\n");
    }
 
 
@@ -180,7 +180,7 @@ implementation {
       running = FALSE;
       call neighborTimer.stop();
       call ageTimer.stop();
-      dbg(GENERAL_CHANNEL, "ND: Stopped\n");
+      // dbg(GENERAL_CHANNEL, "ND: Stopped\n");
    }
 
 
@@ -222,7 +222,7 @@ implementation {
       if (pkt->protocol == ND_REQ_TYPE && pkt->src != TOS_NODE_ID) {
          updateNeighborOnSeen(from);
          sendNDRep(from);
-         dbg(GENERAL_CHANNEL, "ND: Received REQ from %d\n", from);
+         // dbg(GENERAL_CHANNEL, "ND: Received REQ from %d\n", from);
 
          // Update stats for the neighbor that send the REQ
       } else if (pkt->protocol == ND_REP_TYPE && pkt->src != TOS_NODE_ID) {
@@ -232,7 +232,7 @@ implementation {
          if (n != NULL) {
             n->numRepReceivedFrom++;
          }
-         dbg(GENERAL_CHANNEL, "ND: Received REP from %d\n", from);
+         // dbg(GENERAL_CHANNEL, "ND: Received REP from %d\n", from);
       }
    }
 
