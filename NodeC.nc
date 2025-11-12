@@ -47,4 +47,8 @@ implementation {
     components LinkStateC;
     Node.LS -> LinkStateC.LinkState;
     LinkStateC.NeighborDiscovery -> NeighborDiscoveryC.NeighborDiscovery;
+
+    // Transport/TCP module (Project 3 - commented until implemented)
+    // components TransportC;
+    // TransportC.LinkState -> LinkStateC.LinkState;
 }
