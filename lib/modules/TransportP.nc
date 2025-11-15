@@ -10,7 +10,18 @@ module TransportP {
    uses interface SimpleSend;
 }
 // TCP HEADER STRUCTURE
+typedef nx_struct tcp_header_t {
+   nx_uint16_t srcPort;
+   nx_uint16_t destPort;
+   nx_uint32_t seq;
+   nx_uint32_t ack;
+   nx_uint8_t  flags;
+   nx_uint16_t window;
+   nx_uint8_t  length;
+   nx_uint8_t  data[0];
+}
 implementation {
+
    // Socket storage array - one per connection
    socket_store_t sockets[MAX_NUM_OF_SOCKETS];
    uint8_t socketCount = 0;
