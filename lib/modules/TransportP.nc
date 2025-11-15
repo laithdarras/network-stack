@@ -9,7 +9,7 @@ module TransportP {
    uses interface LinkState;
    uses interface SimpleSend;
 }
-
+// TCP HEADER STRUCTURE
 implementation {
    // Socket storage array - one per connection
    socket_store_t sockets[MAX_NUM_OF_SOCKETS];

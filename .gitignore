@@ -6,3 +6,4 @@ build/*
 TOSSIM.py
 _TOSSIMmodule.so
 .vscode/
+.DS_Store
