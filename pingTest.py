@@ -9,24 +9,25 @@ def main():
     s.bootAll()
 
     # Add logging channels
-    s.addChannel(s.COMMAND_CHANNEL)
-    s.addChannel(s.GENERAL_CHANNEL)
-    s.addChannel(s.ROUTING_CHANNEL)
-    # s.addChannel(s.FLOODING_CHANNEL)
+    # s.addChannel(s.COMMAND_CHANNEL)
+    # s.addChannel(s.GENERAL_CHANNEL)
+    # s.addChannel(s.ROUTING_CHANNEL)
+    # # s.addChannel(s.FLOODING_CHANNEL)
+    s.addChannel("Project 3 - TCP")
 
-    # Let neighbor discovery + link state run for a bit
-    s.runTime(10)
+    # Run long enough for TCP timer to fire (5 seconds) and routing to converge
+    s.runTime(30)
 
-    s.routeDMP(4)
-    s.runTime(10)
-    s.ping(16,4,"")
-    s.runTime(10)
-    s.moteOff(9)
-    s.runTime(100)
-    s.ping(5,10,"")
-    s.runTime(10)
-    s.routeDMP(7)
-    s.runTime(10)
+    # s.routeDMP(4)
+    # s.runTime(10)
+    # s.ping(16,4,"")
+    # s.runTime(10)
+    # s.moteOff(9)
+    # s.runTime(100)
+    # s.ping(5,10,"")
+    # s.runTime(10)
+    # s.routeDMP(7)
+    # s.runTime(10)
 
 if __name__ == '__main__':
     main()

@@ -34,7 +34,7 @@ implementation {
     components new TimerMilliC();
     Node.NDTimer -> TimerMilliC;
 
-    // Neighbor Discovery module (shared instance)
+    // Neighbor Discovery module
     components new NeighborDiscoveryC(6) as NeighborDiscoveryC;
     Node.ND -> NeighborDiscoveryC.NeighborDiscovery;
 
@@ -48,7 +48,8 @@ implementation {
     Node.LS -> LinkStateC.LinkState;
     LinkStateC.NeighborDiscovery -> NeighborDiscoveryC.NeighborDiscovery;
 
-    // Transport/TCP module (Project 3 - commented until implemented)
-    // components TransportC;
-    // TransportC.LinkState -> LinkStateC.LinkState;
+    // TCP module
+    components TransportC;
+    TransportC.LinkState -> LinkStateC.LinkState;
+    Node.Transport -> TransportC;
 }

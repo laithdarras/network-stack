@@ -5,6 +5,7 @@
 #include <Timer.h>
 #include "includes/command.h"
 #include "includes/packet.h"
+#include "includes/protocol.h"
 #include "includes/CommandMsg.h"
 #include "includes/sendInfo.h"
 #include "includes/channels.h"
@@ -26,6 +27,7 @@ module Node{
 
    uses interface Flooding as Flood;       // Flooding - Project 1
    uses interface LinkState as LS;         // Link-State Routing - Project 2
+   uses interface Transport;               // TCP - Project 3
 }
 
 implementation{
@@ -64,9 +66,20 @@ implementation{
 
       if(myMsg->protocol == 1 || myMsg->protocol == 2) {    // ND REQ/ND REP
          call ND.onReceive(myMsg, inbound);
-      } else if(myMsg->protocol == 3) {   // FLOOD
+      } else if(myMsg->protocol == 3) {               // FLOOD
          call Flood.onReceive(myMsg, inbound);
-      } else if(myMsg->protocol == 4) {   // Link-State
+      } else if(myMsg->protocol == PROTOCOL_TCP) {   // TCP (check before Link-State since both use protocol 4)
+            if(myMsg->dest == TOS_NODE_ID) {
+               // Deliver to transport layer
+               call Transport.receive(myMsg);
+            } else {
+               // Route to next hop
+               uint16_t next_hop = call LS.nextHop(myMsg->dest);
+               if (next_hop != 0xFFFF) {
+                  call SS.send(*myMsg, next_hop);
+               }
+            }
+      } else if(myMsg->protocol == 4) {               // Link-State
          call Flood.onReceive(myMsg, inbound);
       } else {
          // Regular data packet - route or deliver

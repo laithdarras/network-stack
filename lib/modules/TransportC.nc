@@ -8,9 +8,16 @@ configuration TransportC {
 implementation {
    components TransportP;
    components new SimpleSendC(AM_PACK) as TransportSend;
+   components ActiveMessageC;
+   components new TimerMilliC() as TestTimerC;
+   components MainC;
+   
    // Transport = TransportP.Transport;
    Transport = TransportP.Transport;
    TransportP.LinkState = LinkState;
    TransportP.SimpleSend -> TransportSend;
+   TransportP.Packet -> ActiveMessageC;
+   TransportP.TestTimer -> TestTimerC;
+   TransportP.Boot -> MainC.Boot;
 }
 
