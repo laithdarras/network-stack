@@ -125,6 +125,19 @@ class TestSim:
     def routeDMP(self, destination):
         self.sendCMD(self.CMD_ROUTE_DUMP, destination, "routing command")
 
+    # TODO: Implement tests once Transport is finished
+    def cmdTestClient():
+        # TODO: implement after connect/write/read/handshake are finished
+        pass
+    
+    def cmdTestServer():
+        # TODO: implement after listen/accept/read are finished
+        pass
+
+    def cmdClose():
+        # TODO: implement after close(fd) is implemented in transport
+        pass
+
     def addChannel(self, channelName, out=sys.stdout):
         print("Adding Channel")
         channelName

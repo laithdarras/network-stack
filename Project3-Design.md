@@ -6,13 +6,13 @@ no loss, no duplicates, no reordering, no protection against too-fast sender ove
 a. Handle loss
 - Use sequence numbers, ACKs, and timeouts.
 - Keep a queue of sent-but-not-yet-ACKed segments with timeout = now + 2*RTT.
-- On timeout → retransmit. 
+- On timeout -> retransmit. 
 
 b. Handle duplicates
 - Track nextByteExpected.
-- If a segment’s seq < nextByteExpected → it’s a duplicate, drop it but still ACK.
+- If a segment’s seq < nextByteExpected -> it’s a duplicate, drop it but still ACK.
 
-c. Handle reordering (Go-Back-N)
+c. Handle reordering (Go-Back-N) for sliding window implementation using the gobackn protocol.
 - Only accept in-order data (seq == nextByteExpected).
 - Anything > nextByteExpected is ignored until the missing piece is retransmitted.
 - ACK always advertises the next in-order byte (cumulative ACK). 
@@ -22,3 +22,10 @@ d. Handle flow control (avoid fast sender/slow receiver)
     - effectiveWindow = min(SEND_BUF_SIZE, remoteAdvWindow)
     - canSend = (lastByteSent - lastByteAcked) < effectiveWindow
 - So a fast sender cannot send past what the receiver says it can buffer.
+The send buffer and receive buffer needs to follow the
+
+- Congestion control, we need to incorporate ACK clocking, and counteract congestion with AIMD + Slow Start. 
+
+Need to implement additionally:
+- State machine scenarios for closures, stop and wait, sending/receiving is done but still need to complete closing the connection. close the connection officially from state machine. 
+- Need to implement the TCP states with an enum including all the states of a TCP connection

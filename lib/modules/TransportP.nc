@@ -5,6 +5,19 @@
 #include "../../includes/Transport.h"
 #include "../../includes/channels.h"
 
+// enum STATE {
+//    CLOSED,
+//    LISTEN,
+//    SYN_SENT,
+//    SYN,RCVD
+//    ESTABLISHED
+// }
+
+// // Write internal socket struct representing a TCP connection
+// struct socketConnection {
+//    break;
+// };
+
 module TransportP {
    provides interface Transport;
    uses interface LinkState;
@@ -66,7 +79,7 @@ implementation {
       len = sizeof(tcp_header_t) + dataLen;
       
       // Get next hop for destination
-      nextHop = call LinkState.nextHop(dstAddr);   // Use routing logic already implemented in Project 2
+      nextHop = call LinkState.nextHop(dstAddr);   // call routing
       dbg("Project 3 - TCP", "sendSegment: nextHop returned %d for dst %d\n", nextHop, dstAddr);
       if (nextHop == 0xFFFF) {
          dbg("Project 3 - TCP", "sendSegment: no route to %d (routing may not have converged yet)\n", dstAddr);
@@ -137,7 +150,6 @@ implementation {
    }
 
    command error_t Transport.receive(pack* package) {
-      // Declare all variables at the top
       tcp_segment_t *seg;
       uint8_t totalLen;
       uint8_t dataLen;
@@ -211,7 +223,7 @@ implementation {
    
    event void TestTimer.fired() {
       dbg("Project 3 - TCP", "Timer fired, calling sendSegment\n");
-      // Send to node 2 (direct neighbor) - routing should work immediately
+      // Send to node 2 (direct neighbor) for routing to work immediately
       sendSegment(2, 1234, 5678, 0, 0, TCP_FLAG_SYN, 100, NULL, 0);
    }
 }
