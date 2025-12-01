@@ -57,16 +57,15 @@ typedef struct {
 static retrans_entry_t retransQueue[MAX_RETRANS_QUEUE];
 static bool retransTimerRunning = FALSE;
 
-// Internal socket control block (NOT the public socket_store_t)
+// Internal socket control block
 typedef struct {
    bool inUse;
-   uint8_t state;           // One of TCP_STATE_* values
+   uint8_t state;
    uint16_t localAddr;
    uint16_t localPort;
    uint16_t remoteAddr;
    uint16_t remotePort;
 
-   // Server / accept tracking
    bool isServer;           // TRUE if this is the server side of a connection
    bool pendingAccept;      // TRUE until this connection is returned by accept()
 
@@ -141,10 +140,8 @@ implementation {
    static void clearRetransEntriesForSocket(socket_t fd);
    static error_t sendFin(socket_t fd);
    
-   /**
-    * Allocate a new socket from the socket table
-    * @return socket_t - index of allocated socket, or NULL_SOCKET if table is full
-    */
+   
+   // Allocate a new socket from the socket table
    static socket_t allocSocket() {
       uint8_t i;
       uint16_t j;
@@ -192,10 +189,7 @@ implementation {
       return NULL_SOCKET;
    }
    
-   /**
-    * Free a socket, clearing its state
-    * @param fd - socket file descriptor to free
-    */
+   // Free a socket, clearing its state
    static void freeSocket(socket_t fd) {
       if (fd < MAX_SOCKETS) {
          sockets[fd].inUse = FALSE;
@@ -203,11 +197,7 @@ implementation {
       }
    }
    
-   /**
-    * Find a listening socket by local port
-    * @param port - local port to search for
-    * @return socket_t - index of matching socket, or NULL_SOCKET if not found
-    */
+   // Find a listening socket by local port
    static socket_t findListeningSocketByPort(uint16_t port) {
       uint8_t i;
       for (i = 0; i < MAX_SOCKETS; i++) {
@@ -220,14 +210,7 @@ implementation {
       return NULL_SOCKET;
    }
    
-   /**
-    * Find a socket by 4-tuple (localAddr, localPort, remoteAddr, remotePort)
-    * @param localAddr - local address
-    * @param localPort - local port
-    * @param remoteAddr - remote address
-    * @param remotePort - remote port
-    * @return socket_t - index of matching socket, or NULL_SOCKET if not found
-    */
+   // Find a socket by 4-tuple (localAddr, localPort, remoteAddr, remotePort)
    static socket_t findSocketBy4Tuple(uint16_t localAddr, uint16_t localPort, 
                                       uint16_t remoteAddr, uint16_t remotePort) {
       uint8_t i;
@@ -243,15 +226,8 @@ implementation {
       return NULL_SOCKET;
    }
    
-   /**
-    * Start client-side handshake (sends SYN)
-    * NOTE: This will be called from Transport.connect() when that is implemented
-    * @param fd - socket file descriptor
-    * @param remoteAddr - remote node address
-    * @param remotePort - remote port
-    * @param localPort - local port to use
-    * @return error_t - SUCCESS if SYN sent, FAIL otherwise
-    */
+
+   // Start client-side handshake (sends SYN)
    static error_t startClientHandshake(socket_t fd, uint16_t remoteAddr, uint16_t remotePort, uint16_t localPort) {
       socket_cb_t *s;
       
@@ -289,11 +265,7 @@ implementation {
       return FAIL;
    }
    
-   /**
-    * Compute receive buffer free space for flow control
-    * @param fd - socket file descriptor
-    * @return uint16_t - free space in receive buffer
-    */
+   // Compute receive buffer free space for flow control
    static uint16_t computeRecvFreeSpace(socket_t fd) {
       socket_cb_t *s = &sockets[fd];
       uint32_t used;
@@ -312,9 +284,7 @@ implementation {
       return (uint16_t)(RECV_BUF_SIZE - used);
    }
 
-   /**
-    * Initialize retransmission queue
-    */
+   // Initialize retransmission queue
    static void initRetransQueue() {
       uint8_t i;
       for (i = 0; i < MAX_RETRANS_QUEUE; i++) {
@@ -323,9 +293,7 @@ implementation {
       retransTimerRunning = FALSE;
    }
 
-   /**
-    * Helper to find earliest timeout and schedule timer
-    */
+   // Helper to find earliest timeout and schedule timer
    static void scheduleRetransTimer() {
       uint8_t i;
       bool found;
@@ -400,9 +368,7 @@ implementation {
       retransTimerRunning = TRUE;
    }
 
-   /**
-    * Enqueue a retransmission entry
-    */
+   // Enqueue a retransmission entry
    static void enqueueRetrans(socket_t fd, uint32_t seqStart, uint16_t len, uint32_t now) {
       uint8_t i;
       for (i = 0; i < MAX_RETRANS_QUEUE; i++) {
@@ -421,9 +387,7 @@ implementation {
           (unsigned long)seqStart, len);
    }
 
-   /**
-    * Cleanup retrans entries fully acknowledged
-    */
+   // Cleanup retrans entries fully acknowledged
    static void cleanupAckedRetrans(socket_t fd, uint32_t lastByteAcked) {
       uint8_t i;
       uint32_t seqEnd;
@@ -440,9 +404,7 @@ implementation {
       scheduleRetransTimer();
    }
 
-   /**
-    * Clear retrans entries for socket (used when retransmitting Go-Back-N)
-    */
+   // Clear retrans entries for socket (used when retransmitting Go-Back-N)
    static void clearRetransEntriesForSocket(socket_t fd) {
       uint8_t i;
       for (i = 0; i < MAX_RETRANS_QUEUE; i++) {
@@ -452,10 +414,7 @@ implementation {
       }
    }
    
-   /**
-    * Try to send data from send buffer using Go-Back-N sliding window
-    * @param fd - socket file descriptor (must be in ESTABLISHED state)
-    */
+   // Try to send data from send buffer using Go-Back-N sliding window
    static void trySendData(socket_t fd) {
       socket_cb_t *s;
       uint32_t inFlight;
@@ -572,9 +531,7 @@ implementation {
           fd, s->lastByteSent, inFlight);
    }
 
-   /**
-    * Send FIN segment for socket
-    */
+   // Send FIN segment for socket
    static error_t sendFin(socket_t fd) {
       socket_cb_t *s;
       uint32_t seqNum;
@@ -626,12 +583,7 @@ implementation {
       return SUCCESS;
    }
    
-   /**
-    * Handle a received TCP segment for a specific socket
-    * @param fd - socket file descriptor
-    * @param seg - pointer to received TCP segment
-    * @param dataLen - length of data in segment
-    */
+   // Handle a received TCP segment for a specific socket
    static void handleSegmentForSocket(socket_t fd, tcp_segment_t *seg, uint8_t dataLen) {
       socket_cb_t *s;
       uint8_t flags;
@@ -754,7 +706,7 @@ implementation {
                   }
                }
 
-               // Compute how many new bytes were acknowledged (after clamping)
+               // Compute how many new bytes were acknowledged
                newLastByteAcked = s->lastByteAcked;
                ackedBytes = 0;
                if (newLastByteAcked > oldLastByteAcked) {
@@ -774,7 +726,7 @@ implementation {
                          "CC: fd=%hhu slow-start ackedBytes=%u cwnd=%u ssthresh=%u\n",
                          fd, (unsigned int)ackedBytes, s->cwnd, s->ssthresh);
                   } else {
-                     // Congestion avoidance: linear increase (1 byte per ACK is fine for project)
+                     // Congestion avoidance: linear increase
                      if (s->cwnd < 65535) {
                         s->cwnd += 1;
                      }
@@ -1086,19 +1038,7 @@ implementation {
       }
    }
 
-   /**
-    * Helper function to send a TCP segment
-    * @param dstAddr - Destination node address
-    * @param srcPort - Source port
-    * @param dstPort - Destination port
-    * @param seq - Sequence number (first byte in segment)
-    * @param ack - Acknowledgment number (next expected byte from peer)
-    * @param flags - TCP flags (SYN/ACK/FIN bitfield)
-    * @param advWindow - Advertised window size
-    * @param data - Pointer to data payload (can be NULL if dataLen is 0)
-    * @param dataLen - Length of data payload (0 if no data)
-    * @return error_t - SUCCESS if sent, FAIL otherwise
-    */
+   // Helper function to send a TCP segment
    static error_t sendSegment(uint16_t dstAddr, uint16_t srcPort, uint16_t dstPort, 
                       uint32_t seq, uint32_t ack, uint8_t flags, 
                       uint16_t advWindow, uint8_t *data, uint8_t dataLen) {
@@ -1111,7 +1051,7 @@ implementation {
       
       dbg(TRANSPORT_CHANNEL, "sendSegment called: dst=%d srcPort=%d dstPort=%d\n", dstAddr, srcPort, dstPort);
       
-      // Fill in TCP header
+      // TCP header
       tcpSeg.header.srcPort = srcPort;
       tcpSeg.header.dstPort = dstPort;
       tcpSeg.header.seq = seq;
@@ -1119,9 +1059,9 @@ implementation {
       tcpSeg.header.flags = flags;
       tcpSeg.header.advWindow = advWindow;
 
-      // Copy data payload if provided
+      // Copy data payload
       if (dataLen > 0 && data != NULL) {
-         // Enforce both TCP_MAX_DATA and TCP_MSS limits
+         // TCP_MAX_DATA and TCP_MSS limits
          if (dataLen > TCP_MAX_DATA) {
             dataLen = TCP_MAX_DATA;
          }
@@ -1360,7 +1300,7 @@ implementation {
       if (toCopy > freeSpace) {
          toCopy = freeSpace;
       }
-      // For this project, application data are 16-bit values; enforce even-length writes
+      // application data are 16-bit values; enforce even-length writes
       if (toCopy > 1 && (toCopy & 1)) {
          toCopy -= 1;
       }
@@ -1393,7 +1333,7 @@ implementation {
           "write: fd=%hhu wrote=%hu used=%lu free=%hu lastWritten=%lu state=%hhu\n",
           fd, toCopy, (unsigned long)used, freeSpace, (unsigned long)s->lastByteWritten, s->state);
 
-      // Try to send as much as window allows (will be a no-op until ESTABLISHED)
+      // Try to send as much as window allows
       trySendData(fd);
 
       return toCopy;
@@ -1450,7 +1390,6 @@ implementation {
       if (toCopy > available) {
          toCopy = (uint16_t)available;
       }
-      // For this project, application data are 16-bit values; enforce even-length reads
       if (toCopy > 1 && (toCopy & 1)) {
          toCopy -= 1;
       }
@@ -1530,7 +1469,6 @@ implementation {
       
       dbg(TRANSPORT_CHANNEL, "Transport.receive called, protocol=%d\n", package->protocol);
       
-      // Only process TCP protocol packets
       if (package->protocol != PROTOCOL_TCP) {
          return FAIL;
       }
@@ -1553,56 +1491,46 @@ implementation {
       flags = seg->header.flags;
       advWindow = seg->header.advWindow;
       
-      // Look up socket by 4-tuple (localAddr, localPort, remoteAddr, remotePort)
       fd = findSocketBy4Tuple(dstAddr, dstPort, srcAddr, srcPort);
       
       if (fd != NULL_SOCKET) {
-         // Socket found - log and handle segment
          dbg(TRANSPORT_CHANNEL, "RX TCP for socket %hhu state=%hhu (local %hu:%hu, remote %hu:%hu) seq=%lu dataLen=%hhu\n", 
              fd, sockets[fd].state, dstAddr, dstPort, srcAddr, srcPort, (unsigned long)seq, dataLen);
          handleSegmentForSocket(fd, seg, dataLen);
       } else {
-         // No matching socket found - check if this is a SYN for a new connection
          dbg(TRANSPORT_CHANNEL, "RX TCP with no matching socket (local %hu:%hu, remote %hu:%hu) flags=%hhu\n",
              dstAddr, dstPort, srcAddr, srcPort, flags);
          if (flags & TCP_FLAG_SYN) {
-            // Look for a listening socket on the destination port
             socket_t listenFd = findListeningSocketByPort(dstPort);
             
             if (listenFd != NULL_SOCKET) {
-               // Allocate new socket for this connection
                socket_t newFd = allocSocket();
                
                if (newFd != NULL_SOCKET) {
                   socket_cb_t *newS = &sockets[newFd];
                   
-                  // Initialize 4-tuple
                   newS->localAddr = dstAddr;
                   newS->localPort = dstPort;
                   newS->remoteAddr = srcAddr;
                   newS->remotePort = srcPort;
                   
-                  // Initialize handshake fields
-                  // Start server sequence space at 0 as well (SYN seq=0, first data seq=1)
-                  newS->iss = 0;  // Server's initial sequence number
-                  newS->sndNext = newS->iss + 1;  // Next seq after SYN
-                  newS->irs = seq;  // Record client's initial sequence number
-                  newS->rcvNext = seq + 1;  // Expecting next byte after SYN
+                  
+                  newS->iss = 0; 
+                  newS->sndNext = newS->iss + 1;  
+                  newS->irs = seq;  
+                  newS->rcvNext = seq + 1;
                   newS->advWindow = RECV_BUF_SIZE;
                   newS->isServer = TRUE;
                   newS->pendingAccept = TRUE;
                   
-                  // Set state to SYN_RCVD
                   newS->state = TCP_STATE_SYN_RCVD;
                   
-                  // Send SYN+ACK
                   if (sendSegment(srcAddr, dstPort, srcPort,
                                   newS->iss, newS->rcvNext, 
                                   TCP_FLAG_SYN | TCP_FLAG_ACK, newS->advWindow, NULL, 0) == SUCCESS) {
                      dbg(TRANSPORT_CHANNEL, "SYN received from %hu:%hu, SYN+ACK sent, newFd=%hhu (pendingAccept=TRUE)\n", 
                          srcAddr, srcPort, newFd);
                   } else {
-                     // Failed to send SYN+ACK, free the socket
                      freeSocket(newFd);
                      dbg(TRANSPORT_CHANNEL, "Failed to send SYN+ACK, freeing socket %hhu\n", newFd);
                   }
@@ -1610,11 +1538,9 @@ implementation {
                   dbg(TRANSPORT_CHANNEL, "No free socket available for new connection\n");
                }
             } else {
-               // No listening socket on this port
                dbg(TRANSPORT_CHANNEL, "SYN received but no listening socket on port %hu\n", dstPort);
             }
          } else {
-            // Not a SYN and no matching socket - drop it
             dbg(TRANSPORT_CHANNEL, "RX TCP with no matching socket (local %hu:%hu, remote %hu:%hu)\n", 
                 dstAddr, dstPort, srcAddr, srcPort);
          }
@@ -1787,8 +1713,6 @@ implementation {
    
    event void TestTimer.fired() {
       dbg(TRANSPORT_CHANNEL, "Timer fired, calling sendSegment\n");
-      // Send to node 2 (direct neighbor) for routing to work immediately
       sendSegment(2, 1234, 5678, 0, 0, TCP_FLAG_SYN, 100, NULL, 0);
    }
 }
-
