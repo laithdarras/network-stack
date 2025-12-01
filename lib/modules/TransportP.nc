@@ -730,13 +730,115 @@ implementation {
    }
 
    command uint16_t Transport.write(socket_t fd, uint8_t *buff, uint16_t bufflen) {
-      // Send data (stop-and-wait)
-      return 0;
+      socket_cb_t *s;
+      uint32_t used;
+      uint16_t freeSpace;
+      uint16_t toCopy;
+      uint32_t startIndex;
+
+      // Validate socket
+      if (fd >= MAX_SOCKETS || !sockets[fd].inUse || sockets[fd].state != TCP_STATE_ESTABLISHED) {
+         return 0;
+      }
+
+      s = &sockets[fd];
+
+      // Bytes currently buffered but not yet ACKed
+      used = s->lastByteWritten - s->lastByteAcked;
+      if (used >= SEND_BUF_SIZE) {
+         // No space in send buffer
+         dbg("Project3TCP", "write: fd=%hhu no space (used=%lu)\n", fd, (unsigned long)used);
+         return 0;
+      }
+
+      freeSpace = (uint16_t)(SEND_BUF_SIZE - used);
+
+      toCopy = bufflen;
+      if (toCopy > freeSpace) {
+         toCopy = freeSpace;
+      }
+      if (toCopy == 0) {
+         return 0;
+      }
+
+      // Starting index into sendBuf for new data (0-based)
+      startIndex = s->lastByteWritten;
+      if (startIndex >= SEND_BUF_SIZE) {
+         // Clamp to end to avoid overflow
+         startIndex = SEND_BUF_SIZE;
+      }
+      if (startIndex + toCopy > SEND_BUF_SIZE) {
+         toCopy = (uint16_t)(SEND_BUF_SIZE - startIndex);
+      }
+      if (toCopy == 0) {
+         return 0;
+      }
+
+      // Copy application data into send buffer
+      memcpy(&s->sendBuf[startIndex], buff, toCopy);
+      s->lastByteWritten += toCopy;
+
+      dbg("Project3TCP",
+          "write: fd=%hhu wrote=%hu used=%lu free=%hu lastWritten=%lu\n",
+          fd, toCopy, (unsigned long)used, freeSpace, (unsigned long)s->lastByteWritten);
+
+      // Try to send as much as window allows
+      trySendData(fd);
+
+      return toCopy;
    }
 
    command uint16_t Transport.read(socket_t fd, uint8_t *buff, uint16_t bufflen) {
-      // Read received data
-      return 0;
+      socket_cb_t *s;
+      uint32_t available;
+      uint16_t toCopy;
+      uint32_t startIndex;
+
+      // Validate socket
+      if (fd >= MAX_SOCKETS || !sockets[fd].inUse || sockets[fd].state != TCP_STATE_ESTABLISHED) {
+         return 0;
+      }
+
+      s = &sockets[fd];
+
+      // In-order bytes available between lastByteRead+1 and nextByteExpected-1
+      available = 0;
+      if (s->nextByteExpected > 0) {
+         available = (s->nextByteExpected - 1) - s->lastByteRead;
+      }
+      if (available == 0) {
+         return 0;
+      }
+
+      toCopy = bufflen;
+      if (toCopy > available) {
+         toCopy = (uint16_t)available;
+      }
+      if (toCopy == 0) {
+         return 0;
+      }
+
+      // Starting index into recvBuf (0-based)
+      startIndex = s->lastByteRead;
+      if (startIndex >= RECV_BUF_SIZE) {
+         startIndex = RECV_BUF_SIZE;
+      }
+      if (startIndex + toCopy > RECV_BUF_SIZE) {
+         toCopy = (uint16_t)(RECV_BUF_SIZE - startIndex);
+      }
+      if (toCopy == 0) {
+         return 0;
+      }
+
+      // Copy data out to application buffer
+      memcpy(buff, &s->recvBuf[startIndex], toCopy);
+      s->lastByteRead += toCopy;
+
+      dbg("Project3TCP",
+          "read: fd=%hhu read=%hu available=%lu lastByteRead=%lu\n",
+          fd, toCopy, (unsigned long)available, (unsigned long)s->lastByteRead);
+
+      return toCopy;
    }
 
    command error_t Transport.receive(pack* package) {
