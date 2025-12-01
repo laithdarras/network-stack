@@ -151,19 +151,6 @@ implementation {
       call ND.printNeighbors();
    }
 
-   // Project 3
-   event void Cmd.setTestServer(){
-      // TODO: Call Transport.testServer()
-   }
-
-   event void Cmd.setTestClient(){
-      // TODO: Call Transport.testClient()
-   }
-
-   event void Cmd.setTestClose(){
-      // TODO: Call Transport.testClose() after close()
-   }
-
    // Project 2
    event void Cmd.printRouteTable(){
       // dbg(COMMAND_CHANNEL, "Cmd: printRouteTable\n");
@@ -171,16 +158,16 @@ implementation {
       call LS.printLinkStateDB();
       call LS.printRouteTable();
    }
+   
    event void Cmd.printLinkState(){
       call LS.printLinkStateDB();
+   }
+   
    event void Cmd.printDistanceVector(){}
-
-   // Project 3
+   
    event void Cmd.setTestServer(){}
    event void Cmd.setTestClient(){}
    event void Cmd.setTestClose(){}
-
-   // Project 4
    event void Cmd.setAppServer(){}
    event void Cmd.setAppClient(){}
 

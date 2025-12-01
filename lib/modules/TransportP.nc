@@ -5,18 +5,30 @@
 #include "../../includes/Transport.h"
 #include "../../includes/channels.h"
 
-// enum STATE {
-//    CLOSED,
-//    LISTEN,
-//    SYN_SENT,
-//    SYN,RCVD
-//    ESTABLISHED
-// }
+// TCP connection states
+enum {
+   TCP_STATE_CLOSED = 0,
+   TCP_STATE_LISTEN,
+   TCP_STATE_SYN_SENT,
+   TCP_STATE_SYN_RCVD,
+   TCP_STATE_ESTABLISHED
+};
 
-// // Write internal socket struct representing a TCP connection
-// struct socketConnection {
-//    break;
-// };
+// Internal socket control block (NOT the public socket_store_t)
+typedef struct {
+   bool inUse;
+   uint8_t state;           // One of TCP_STATE_* values
+   uint16_t localAddr;
+   uint16_t localPort;
+   uint16_t remoteAddr;
+   uint16_t remotePort;
+   // TODO: Add send buffer and window fields for sliding window
+   // TODO: Add receive buffer and window fields for flow control
+   // TODO: Add sequence number tracking for reliability
+} socket_cb_t;
+
+#define MAX_SOCKETS 8
+#define NULL_SOCKET 0xFF
 
 module TransportP {
    provides interface Transport;
@@ -28,9 +40,96 @@ module TransportP {
 }
 
 implementation {
-   // Socket storage array - one per connection
-   socket_store_t sockets[MAX_NUM_OF_SOCKETS];
+   // Internal socket control block array
+   static socket_cb_t sockets[MAX_SOCKETS];
+   
+   // Legacy socket_store_t array (kept for compatibility, may be used later)
+   socket_store_t socketStores[MAX_NUM_OF_SOCKETS];
    uint8_t socketCount = 0;
+   
+   /**
+    * Allocate a new socket from the socket table
+    * @return socket_t - index of allocated socket, or NULL_SOCKET if table is full
+    */
+   static socket_t allocSocket() {
+      uint8_t i;
+      for (i = 0; i < MAX_SOCKETS; i++) {
+         if (!sockets[i].inUse) {
+            sockets[i].inUse = TRUE;
+            sockets[i].state = TCP_STATE_CLOSED;
+            sockets[i].localAddr = TOS_NODE_ID;
+            sockets[i].localPort = 0;
+            sockets[i].remoteAddr = 0;
+            sockets[i].remotePort = 0;
+            return i;
+         }
+      }
+      return NULL_SOCKET;
+   }
+   
+   /**
+    * Free a socket, clearing its state
+    * @param fd - socket file descriptor to free
+    */
+   static void freeSocket(socket_t fd) {
+      if (fd < MAX_SOCKETS) {
+         sockets[fd].inUse = FALSE;
+         sockets[fd].state = TCP_STATE_CLOSED;
+      }
+   }
+   
+   /**
+    * Find a listening socket by local port
+    * @param port - local port to search for
+    * @return socket_t - index of matching socket, or NULL_SOCKET if not found
+    */
+   static socket_t findListeningSocketByPort(uint16_t port) {
+      uint8_t i;
+      for (i = 0; i < MAX_SOCKETS; i++) {
+         if (sockets[i].inUse && 
+             sockets[i].state == TCP_STATE_LISTEN && 
+             sockets[i].localPort == port) {
+            return i;
+         }
+      }
+      return NULL_SOCKET;
+   }
+   
+   /**
+    * Find a socket by 4-tuple (localAddr, localPort, remoteAddr, remotePort)
+    * @param localAddr - local address
+    * @param localPort - local port
+    * @param remoteAddr - remote address
+    * @param remotePort - remote port
+    * @return socket_t - index of matching socket, or NULL_SOCKET if not found
+    */
+   static socket_t findSocketBy4Tuple(uint16_t localAddr, uint16_t localPort, 
+                                      uint16_t remoteAddr, uint16_t remotePort) {
+      uint8_t i;
+      for (i = 0; i < MAX_SOCKETS; i++) {
+         if (sockets[i].inUse &&
+             sockets[i].localAddr == localAddr &&
+             sockets[i].localPort == localPort &&
+             sockets[i].remoteAddr == remoteAddr &&
+             sockets[i].remotePort == remotePort) {
+            return i;
+         }
+      }
+      return NULL_SOCKET;
+   }
+   
+   /**
+    * Handle a received TCP segment for a specific socket
+    * @param fd - socket file descriptor
+    * @param seg - pointer to received TCP segment
+    * @param dataLen - length of data in segment
+    */
+   static void handleSegmentForSocket(socket_t fd, tcp_segment_t *seg, uint8_t dataLen) {
+      // TODO: Implement handshake logic (SYN/SYN+ACK/ACK)
+      // TODO: Implement sliding window for reliability
+      // TODO: Implement flow control using advWindow
+      // TODO: Handle data segments, ACKs, FINs based on socket state
+   }
 
    /**
     * Helper function to send a TCP segment
@@ -54,6 +153,7 @@ implementation {
       uint8_t len;
       uint16_t nextHop;
       pack sendPack;
+
       
       dbg("Project 3 - TCP", "sendSegment called: dst=%d srcPort=%d dstPort=%d\n", dstAddr, srcPort, dstPort);
       
@@ -150,15 +250,19 @@ implementation {
    }
 
    command error_t Transport.receive(pack* package) {
+      // Declare all variables at the top
       tcp_segment_t *seg;
       uint8_t totalLen;
       uint8_t dataLen;
+      uint16_t srcAddr;
+      uint16_t dstAddr;
       uint16_t srcPort;
       uint16_t dstPort;
       uint32_t seq;
       uint32_t ack;
       uint8_t flags;
       uint16_t advWindow;
+      socket_t fd;
       
       dbg("Project 3 - TCP", "Transport.receive called, protocol=%d\n", package->protocol);
       
@@ -169,6 +273,12 @@ implementation {
       
       // Cast payload to TCP segment
       seg = (tcp_segment_t *)package->payload;
+      
+      // Derive addresses and ports
+      srcAddr = package->src;   // Remote address (sender)
+      dstAddr = package->dest;  // Local address (this node)
+      srcPort = seg->header.srcPort;  // Remote port
+      dstPort = seg->header.dstPort;  // Local port
       
       // Calculate data length: totalLen - header size
       // NOTE: The pack struct doesn't store the actual received payload length.
@@ -189,17 +299,25 @@ implementation {
          }
       }
       
-      // Extract TCP header fields
-      srcPort = seg->header.srcPort;
-      dstPort = seg->header.dstPort;
+      // Extract remaining TCP header fields
       seq = seg->header.seq;
       ack = seg->header.ack;
       flags = seg->header.flags;
       advWindow = seg->header.advWindow;
       
-      // Log received TCP segment
-      dbg("Project 3 - TCP", "RX TCP: srcPort=%hu dstPort=%hu seq=%lu ack=%lu flags=%hhu advWindow=%hu dataLen=%hhu\n", 
-          srcPort, dstPort, seq, ack, flags, advWindow, dataLen);
+      // Look up socket by 4-tuple (localAddr, localPort, remoteAddr, remotePort)
+      fd = findSocketBy4Tuple(dstAddr, dstPort, srcAddr, srcPort);
+      
+      if (fd != NULL_SOCKET) {
+         // Socket found - log and handle segment
+         dbg("Project 3 - TCP", "RX TCP for socket %hhu state=%hhu (local %hu:%hu, remote %hu:%hu)\n", 
+             fd, sockets[fd].state, dstAddr, dstPort, srcAddr, srcPort);
+         handleSegmentForSocket(fd, seg, dataLen);
+      } else {
+         // No matching socket found
+         dbg("Project 3 - TCP", "RX TCP with no matching socket (local %hu:%hu, remote %hu:%hu)\n", 
+             dstAddr, dstPort, srcAddr, srcPort);
+      }
       
       return SUCCESS;
    }
