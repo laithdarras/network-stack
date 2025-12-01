@@ -88,6 +88,8 @@ typedef struct {
    uint32_t lastByteSent;             // highest byte index actually sent in segments
    uint32_t lastByteAcked;            // highest byte index cumulatively acknowledged by peer
    uint16_t remoteAdvWindow;          // last advertised window from peer
+   uint16_t cwnd;                     // congestion window (bytes)
+   uint16_t ssthresh;                 // slow start threshold (bytes)
    
    // Receive-side state (for Go-Back-N + flow control)
    uint8_t  recvBuf[RECV_BUF_SIZE];   // buffer for in-order received data
@@ -107,6 +109,20 @@ module TransportP {
 }
 
 implementation {
+   // Compute number of bytes currently in flight (sent but not yet cumulatively ACKed)
+   static uint32_t bytesInFlight(socket_cb_t *s) {
+      if (s->lastByteSent >= s->lastByteAcked) {
+         return s->lastByteSent - s->lastByteAcked;
+      } else {
+         // Safety clamp: ACK should never be ahead of what we've sent.
+         dbg("Project3TCP",
+             "CC WARNING: lastByteAcked(%u) > lastByteSent(%u), clamping\n",
+             (unsigned int)s->lastByteAcked,
+             (unsigned int)s->lastByteSent);
+         return 0;
+      }
+   }
+
    // Internal socket control block array
    static socket_cb_t sockets[MAX_SOCKETS];
    
@@ -156,6 +172,8 @@ implementation {
             sockets[i].lastByteSent = 0;
             sockets[i].lastByteAcked = 0;
             sockets[i].remoteAdvWindow = SEND_BUF_SIZE;
+            sockets[i].cwnd = TCP_MSS;           // start congestion window at 1 MSS
+            sockets[i].ssthresh = 4 * TCP_MSS;   // simple initial slow-start threshold
             for (j = 0; j < SEND_BUF_SIZE; j++) {
                sockets[i].sendBuf[j] = 0;
             }
@@ -460,15 +478,29 @@ implementation {
          return;
       }
       
-      dbg("Project3TCP", "trySendData: entered (fd=%hhu, lastByteWritten=%lu, lastByteSent=%lu, lastByteAcked=%lu)\n",
+      dbg(TRANSPORT_CHANNEL, "trySendData: entered (fd=%hhu, lastByteWritten=%lu, lastByteSent=%lu, lastByteAcked=%lu)\n",
           fd, s->lastByteWritten, s->lastByteSent, s->lastByteAcked);
       
-      // Compute in-flight bytes and effective window
-      inFlight = s->lastByteSent - s->lastByteAcked;
-      effectiveWindow = s->remoteAdvWindow;
-      if (effectiveWindow > SEND_BUF_SIZE) {
-         effectiveWindow = SEND_BUF_SIZE;
+      // Compute in-flight bytes safely
+      inFlight = bytesInFlight(s);
+
+      // Effective window is min(congestion window, peer's advertised window, and our send buffer)
+      {
+         uint16_t congWindow = s->cwnd;
+         uint16_t flowWindow = s->remoteAdvWindow;
+         uint16_t bufWindow  = SEND_BUF_SIZE;
+
+         effectiveWindow = congWindow;
+         if (flowWindow < effectiveWindow) {
+            effectiveWindow = flowWindow;
+         }
+         if (bufWindow < effectiveWindow) {
+            effectiveWindow = bufWindow;
+         }
       }
+
+      dbg(TRANSPORT_CHANNEL, "CC: trySendData fd=%hhu cwnd=%hu effWin=%hu inFlight=%lu\n",
+          fd, s->cwnd, effectiveWindow, (unsigned long)inFlight);
       
       // Update our advertised window before sending
       s->advWindow = computeRecvFreeSpace(fd);
@@ -519,7 +551,7 @@ implementation {
             
             // Update send state
             s->lastByteSent += dataLen;
-            inFlight = s->lastByteSent - s->lastByteAcked;
+            inFlight = bytesInFlight(s);
             s->sndNext = s->lastByteSent + 1;
 
             // Track segment for possible retransmission
@@ -528,15 +560,15 @@ implementation {
                enqueueRetrans(fd, seqNum, dataLen, now);
             }
             
-            dbg("Project3TCP", "trySendData: sent segment seq=%lu dataLen=%hu inFlight=%lu effectiveWindow=%hu\n",
+            dbg(TRANSPORT_CHANNEL, "trySendData: sent segment seq=%lu dataLen=%hu inFlight=%lu effectiveWindow=%hu\n",
                 seqNum, dataLen, inFlight, effectiveWindow);
          } else {
-            dbg("Project3TCP", "trySendData: sendSegment failed, breaking\n");
+            dbg(TRANSPORT_CHANNEL, "trySendData: sendSegment failed, breaking\n");
             break;
          }
       }
       
-      dbg("Project3TCP", "trySendData: exited (fd=%hhu, lastByteSent=%lu, inFlight=%lu)\n",
+      dbg(TRANSPORT_CHANNEL, "trySendData: exited (fd=%hhu, lastByteSent=%lu, inFlight=%lu)\n",
           fd, s->lastByteSent, inFlight);
    }
 
@@ -633,6 +665,11 @@ implementation {
                   if (sendSegment(s->remoteAddr, s->localPort, s->remotePort,
                                   s->sndNext, s->rcvNext, TCP_FLAG_ACK, 0, NULL, 0) == SUCCESS) {
                      s->state = TCP_STATE_ESTABLISHED;
+                     // Initialize congestion control on successful handshake
+                     s->cwnd = TCP_MSS;
+                     if (s->ssthresh < 2 * TCP_MSS) {
+                        s->ssthresh = 4 * TCP_MSS;
+                     }
                      dbg("Project3TCP", "Client: connection ESTABLISHED (fd=%hhu)\n", fd);
                      // If any application data was queued before connect completed, send it now
                      trySendData(fd);
@@ -658,6 +695,11 @@ implementation {
                   s->remoteAdvWindow = seg->header.advWindow;
 
                   s->state = TCP_STATE_ESTABLISHED;
+                  // Initialize congestion control on successful handshake
+                  s->cwnd = TCP_MSS;
+                  if (s->ssthresh < 2 * TCP_MSS) {
+                     s->ssthresh = 4 * TCP_MSS;
+                  }
                   dbg("Project3TCP", "Server: connection ESTABLISHED (fd=%hhu)\n", fd);
                   // If any application data was queued before connect completed, send it now
                   trySendData(fd);
@@ -680,16 +722,63 @@ implementation {
             uint16_t firstChunk;
             uint16_t secondChunk;
             uint16_t spaceToEnd;
+            uint32_t oldLastByteAcked;
+            uint32_t newLastByteAcked;
+            uint32_t ackedBytes;
 
             ackNum = seg->header.ack;
             seqNum = seg->header.seq;
             
             // 1) Handle ACKs (even if data is also present)
             if (flags & TCP_FLAG_ACK) {
-               // Update lastByteAcked if this ACK moves us forward
-               if (ackNum > 0 && ackNum - 1 > s->lastByteAcked) {
-                  s->lastByteAcked = ackNum - 1;
+               // Save old ACKed range for congestion control
+               oldLastByteAcked = s->lastByteAcked;
+
+               // Update lastByteAcked if this ACK moves us forward, but never beyond lastByteSent
+               if (ackNum > 0) {
+                  uint32_t proposed = ackNum - 1;
+                  if (proposed > s->lastByteAcked) {
+                     if (proposed > s->lastByteSent) {
+                        dbg("Project3TCP",
+                            "CC WARNING: proposed lastByteAcked(%u) > lastByteSent(%u), clamping\n",
+                            (unsigned int)proposed,
+                            (unsigned int)s->lastByteSent);
+                        proposed = s->lastByteSent;
+                     }
+                     s->lastByteAcked = proposed;
+                  }
                }
+
+               // Compute how many new bytes were acknowledged (after clamping)
+               newLastByteAcked = s->lastByteAcked;
+               ackedBytes = 0;
+               if (newLastByteAcked > oldLastByteAcked) {
+                  ackedBytes = newLastByteAcked - oldLastByteAcked;
+               }
+
+               // Tahoe-style congestion control: only adjust cwnd when we make forward progress
+               if (ackedBytes > 0) {
+                  if (s->cwnd < s->ssthresh) {
+                     // Slow start: cwnd grows by 1 MSS per ACK
+                     if ((uint32_t)s->cwnd + TCP_MSS > 65535U) {
+                        s->cwnd = 65535;
+                     } else {
+                        s->cwnd += TCP_MSS;
+                     }
+                     dbg(TRANSPORT_CHANNEL,
+                         "CC: fd=%hhu slow-start ackedBytes=%u cwnd=%u ssthresh=%u\n",
+                         fd, (unsigned int)ackedBytes, s->cwnd, s->ssthresh);
+                  } else {
+                     // Congestion avoidance: linear increase (1 byte per ACK is fine for project)
+                     if (s->cwnd < 65535) {
+                        s->cwnd += 1;
+                     }
+                     dbg(TRANSPORT_CHANNEL,
+                         "CC: fd=%hhu cong-avoid ackedBytes=%u cwnd=%u ssthresh=%u\n",
+                         fd, (unsigned int)ackedBytes, s->cwnd, s->ssthresh);
+                  }
+               }
+
                // Also update remoteAdvWindow from header
                s->remoteAdvWindow = seg->header.advWindow;
                
@@ -1266,6 +1355,10 @@ implementation {
       if (toCopy > freeSpace) {
          toCopy = freeSpace;
       }
+      // For this project, application data are 16-bit values; enforce even-length writes
+      if (toCopy > 1 && (toCopy & 1)) {
+         toCopy -= 1;
+      }
       if (toCopy == 0) {
          return 0;
       }
@@ -1330,6 +1423,10 @@ implementation {
       toCopy = bufflen;
       if (toCopy > available) {
          toCopy = (uint16_t)available;
+      }
+      // For this project, application data are 16-bit values; enforce even-length reads
+      if (toCopy > 1 && (toCopy & 1)) {
+         toCopy -= 1;
       }
       if (toCopy == 0) {
          return 0;
@@ -1626,8 +1723,20 @@ implementation {
          return;
       }
 
-      dbg("Project3TCP", "Timeout on fd=%hhu seqStart=%lu, retransmitting unACKed data\n",
+      dbg(TRANSPORT_CHANNEL, "Timeout on fd=%hhu seqStart=%lu, retransmitting unACKed data\n",
           entry->fd, (unsigned long)entry->seqStart);
+
+      // Tahoe-style multiplicative decrease on congestion window for this timeout
+      if (s->cwnd > TCP_MSS) {
+         uint16_t newSsthresh = s->cwnd / 2;
+         if (newSsthresh < TCP_MSS) {
+            newSsthresh = TCP_MSS;
+         }
+         s->ssthresh = newSsthresh;
+      }
+      s->cwnd = TCP_MSS;
+      dbg(TRANSPORT_CHANNEL, "CC: timeout fd=%hhu, ssthresh=%hu, cwnd reset to %hu\n",
+          entry->fd, s->ssthresh, s->cwnd);
 
       // Go-Back-N: reset send pointer to last ACKed byte
       s->lastByteSent = s->lastByteAcked;
