@@ -14,6 +14,24 @@ enum {
    TCP_STATE_ESTABLISHED
 };
 
+// Buffer size constants (must be defined before socket_cb_t struct)
+#ifndef SEND_BUF_SIZE
+#define SEND_BUF_SIZE 128
+#endif
+
+#ifndef RECV_BUF_SIZE
+#define RECV_BUF_SIZE 128
+#endif
+
+// Max segment data size (MSS) – keep within existing packet size constraints
+// PACKET_MAX_PAYLOAD_SIZE = 20, TCP header = 15 bytes, so max TCP data = 5 bytes
+#ifndef TCP_MSS
+#define TCP_MSS 5   // Max TCP data that fits in pack.payload (20 - 15 header)
+#endif
+
+#define MAX_SOCKETS 8
+#define NULL_SOCKET 0xFF
+
 // Internal socket control block (NOT the public socket_store_t)
 typedef struct {
    bool inUse;
@@ -26,13 +44,21 @@ typedef struct {
    uint32_t iss;            // Initial send sequence number
    uint32_t irs;            // Initial receive sequence number from peer
    uint32_t sndNext;        // Next send sequence number
-   uint32_t rcvNext;        // Next expected receive sequence number
-   // TODO: Add send buffer and window fields for sliding window
-   // TODO: Add receive buffer and window fields for flow control
+   uint32_t rcvNext;        // Next expected receive sequence number (legacy, prefer nextByteExpected)
+   
+   // Send-side state (for reliability / sliding window)
+   uint8_t  sendBuf[SEND_BUF_SIZE];   // app data waiting to be (or already) sent
+   uint32_t lastByteWritten;          // highest byte index written by app into sendBuf
+   uint32_t lastByteSent;             // highest byte index actually sent in segments
+   uint32_t lastByteAcked;            // highest byte index cumulatively acknowledged by peer
+   uint16_t remoteAdvWindow;          // last advertised window from peer
+   
+   // Receive-side state (for Go-Back-N + flow control)
+   uint8_t  recvBuf[RECV_BUF_SIZE];   // buffer for in-order received data
+   uint32_t nextByteExpected;         // seq number of next byte we expect from peer
+   uint32_t lastByteRead;             // last byte index returned to the app (for later read())
+   uint16_t advWindow;                // this connection's advertised window (free space in recvBuf)
 } socket_cb_t;
-
-#define MAX_SOCKETS 8
-#define NULL_SOCKET 0xFF
 
 module TransportP {
    provides interface Transport;
@@ -62,6 +88,7 @@ implementation {
     */
    static socket_t allocSocket() {
       uint8_t i;
+      uint16_t j;
       for (i = 0; i < MAX_SOCKETS; i++) {
          if (!sockets[i].inUse) {
             sockets[i].inUse = TRUE;
@@ -74,6 +101,24 @@ implementation {
             sockets[i].irs = 0;
             sockets[i].sndNext = 0;
             sockets[i].rcvNext = 0;
+            
+            // Initialize send-side state
+            sockets[i].lastByteWritten = 0;
+            sockets[i].lastByteSent = 0;
+            sockets[i].lastByteAcked = 0;
+            sockets[i].remoteAdvWindow = SEND_BUF_SIZE;
+            for (j = 0; j < SEND_BUF_SIZE; j++) {
+               sockets[i].sendBuf[j] = 0;
+            }
+            
+            // Initialize receive-side state
+            sockets[i].nextByteExpected = 1;
+            sockets[i].lastByteRead = 0;
+            sockets[i].advWindow = RECV_BUF_SIZE;
+            for (j = 0; j < RECV_BUF_SIZE; j++) {
+               sockets[i].recvBuf[j] = 0;
+            }
+            
             return i;
          }
       }
@@ -177,6 +222,122 @@ implementation {
    }
    
    /**
+    * Compute receive buffer free space for flow control
+    * @param fd - socket file descriptor
+    * @return uint16_t - free space in receive buffer
+    */
+   static uint16_t computeRecvFreeSpace(socket_t fd) {
+      socket_cb_t *s = &sockets[fd];
+      uint32_t used;
+      
+      if (s->nextByteExpected == 0) {
+         // no data yet
+         used = 0;
+      } else {
+         // bytes between lastByteRead+1 and nextByteExpected-1 are "in buffer but unread"
+         used = (s->nextByteExpected - 1) - s->lastByteRead;
+      }
+      
+      if (used >= RECV_BUF_SIZE) {
+         return 0;
+      }
+      return (uint16_t)(RECV_BUF_SIZE - used);
+   }
+   
+   /**
+    * Try to send data from send buffer using Go-Back-N sliding window
+    * @param fd - socket file descriptor (must be in ESTABLISHED state)
+    */
+   static void trySendData(socket_t fd) {
+      socket_cb_t *s;
+      uint32_t inFlight;
+      uint16_t effectiveWindow;
+      uint32_t bytesAvailable;
+      uint32_t windowSpace;
+      uint16_t dataLen;
+      uint32_t seqNum;
+      uint16_t bufIndex;
+      uint32_t ackToSend;
+      
+      if (fd >= MAX_SOCKETS || !sockets[fd].inUse) {
+         return;
+      }
+      
+      s = &sockets[fd];
+      
+      if (s->state != TCP_STATE_ESTABLISHED) {
+         return;
+      }
+      
+      dbg("Project3TCP", "trySendData: entered (fd=%hhu, lastByteWritten=%lu, lastByteSent=%lu, lastByteAcked=%lu)\n",
+          fd, s->lastByteWritten, s->lastByteSent, s->lastByteAcked);
+      
+      // Compute in-flight bytes and effective window
+      inFlight = s->lastByteSent - s->lastByteAcked;
+      effectiveWindow = s->remoteAdvWindow;
+      if (effectiveWindow > SEND_BUF_SIZE) {
+         effectiveWindow = SEND_BUF_SIZE;
+      }
+      
+      // Update our advertised window before sending
+      s->advWindow = computeRecvFreeSpace(fd);
+      ackToSend = s->nextByteExpected;
+      
+      // While we have unsent data and window space available
+      while (s->lastByteSent < s->lastByteWritten && inFlight < effectiveWindow) {
+         // Determine how many bytes we can send in this segment
+         bytesAvailable = s->lastByteWritten - s->lastByteSent;
+         windowSpace = effectiveWindow - inFlight;
+         dataLen = (uint16_t)bytesAvailable;
+         
+         if (dataLen > TCP_MSS) {
+            dataLen = TCP_MSS;
+         }
+         if (dataLen > windowSpace) {
+            dataLen = (uint16_t)windowSpace;
+         }
+         
+         if (dataLen == 0) {
+            break;
+         }
+         
+         // Compute sequence number of first byte in this segment
+         seqNum = s->lastByteSent + 1;
+         
+         // Map seqNum (1-based) to buffer index (0-based)
+         bufIndex = (uint16_t)(seqNum - 1);
+         
+         // Build and send segment
+         if (sendSegment(
+               s->remoteAddr,
+               s->localPort,
+               s->remotePort,
+               seqNum,
+               ackToSend,
+               TCP_FLAG_ACK,
+               s->advWindow,
+               &s->sendBuf[bufIndex],
+               dataLen
+            ) == SUCCESS) {
+            
+            // Update send state
+            s->lastByteSent += dataLen;
+            inFlight = s->lastByteSent - s->lastByteAcked;
+            s->sndNext = s->lastByteSent + 1;
+            
+            dbg("Project3TCP", "trySendData: sent segment seq=%lu dataLen=%hu inFlight=%lu effectiveWindow=%hu\n",
+                seqNum, dataLen, inFlight, effectiveWindow);
+         } else {
+            dbg("Project3TCP", "trySendData: sendSegment failed, breaking\n");
+            break;
+         }
+      }
+      
+      dbg("Project3TCP", "trySendData: exited (fd=%hhu, lastByteSent=%lu, inFlight=%lu)\n",
+          fd, s->lastByteSent, inFlight);
+   }
+   
+   /**
     * Handle a received TCP segment for a specific socket
     * @param fd - socket file descriptor
     * @param seg - pointer to received TCP segment
@@ -233,9 +394,82 @@ implementation {
             // Ignore other segments in SYN_RCVD state
             break;
             
-         case TCP_STATE_ESTABLISHED:
-            // TODO: Handle data segments, ACKs, FINs in ESTABLISHED state
+         case TCP_STATE_ESTABLISHED: {
+            // Declare all variables at the top
+            uint32_t ackNum;
+            uint32_t seqNum;
+            uint32_t expected;
+            uint16_t bufIndex;
+            uint32_t ackToSend;
+            uint16_t freeSpace;
+            
+            ackNum = seg->header.ack;
+            seqNum = seg->header.seq;
+            
+            // 1) Handle ACKs (even if data is also present)
+            if (flags & TCP_FLAG_ACK) {
+               // Update lastByteAcked if this ACK moves us forward
+               if (ackNum > 0 && ackNum - 1 > s->lastByteAcked) {
+                  s->lastByteAcked = ackNum - 1;
+               }
+               // Also update remoteAdvWindow from header
+               s->remoteAdvWindow = seg->header.advWindow;
+               
+               // Try to send more data now that window space may have opened
+               trySendData(fd);
+            }
+            
+            // 2) Handle data (Go-Back-N receiver behavior)
+            if (dataLen > 0) {
+               expected = s->nextByteExpected;
+               
+               if (seqNum == expected) {
+                  // In-order segment: accept and place in recvBuf
+                  // Map seqNum (1-based) to buffer index (0-based)
+                  bufIndex = (uint16_t)(seqNum - 1);
+                  if (bufIndex + dataLen <= RECV_BUF_SIZE) {
+                     memcpy(&s->recvBuf[bufIndex], seg->data, dataLen);
+                     s->nextByteExpected += dataLen;
+                  } else {
+                     // Out of buffer bounds; drop payload but still ACK current expected
+                     dbg("Project3TCP", "EST: data exceeds recvBuf, dropping payload\n");
+                  }
+               } else if (seqNum < expected) {
+                  // Duplicate or already received; ignore payload
+                  dbg("Project3TCP", "EST: duplicate data seq=%lu expected=%lu\n",
+                      (unsigned long)seqNum, (unsigned long)expected);
+               } else { // seqNum > expected
+                  // Out-of-order ahead; Go-Back-N receiver drops payload
+                  dbg("Project3TCP", "EST: out-of-order seq=%lu expected=%lu (drop)\n",
+                      (unsigned long)seqNum, (unsigned long)expected);
+               }
+               
+               // After any data, we always send a cumulative ACK
+               // (even if payload was dropped/duplicate).
+               ackToSend = s->nextByteExpected;
+               freeSpace = computeRecvFreeSpace(fd);
+               s->advWindow = freeSpace;
+               
+               dbg("Project3TCP",
+                   "EST: sending ACK ack=%lu advWindow=%u\n",
+                   (unsigned long)ackToSend, freeSpace);
+               
+               // We don't advance sndNext here since this is a pure ACK.
+               sendSegment(
+                  s->remoteAddr,
+                  s->localPort,
+                  s->remotePort,
+                  s->sndNext,           // current send seq (no new data)
+                  ackToSend,
+                  TCP_FLAG_ACK,
+                  s->advWindow,
+                  NULL,
+                  0
+               );
+            }
+            
             break;
+         }
             
          default:
             // Ignore segments in other states for now
