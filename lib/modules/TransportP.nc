@@ -11,7 +11,12 @@ enum {
    TCP_STATE_LISTEN,
    TCP_STATE_SYN_SENT,
    TCP_STATE_SYN_RCVD,
-   TCP_STATE_ESTABLISHED
+   TCP_STATE_ESTABLISHED,
+   TCP_STATE_FIN_WAIT_1,
+   TCP_STATE_FIN_WAIT_2,
+   TCP_STATE_CLOSE_WAIT,
+   TCP_STATE_LAST_ACK,
+   TCP_STATE_TIME_WAIT
 };
 
 // Buffer size constants (must be defined before socket_cb_t struct)
@@ -30,6 +35,10 @@ enum {
 
 #ifndef TCP_TIMEOUT
 #define TCP_TIMEOUT (2 * TCP_RTT_EST)
+#endif
+
+#ifndef TCP_TIME_WAIT
+#define TCP_TIME_WAIT 5000  // ms
 #endif
 
 // Max segment data size (MSS) – keep within existing packet size constraints
@@ -73,6 +82,12 @@ typedef struct {
    uint32_t irs;            // Initial receive sequence number from peer
    uint32_t sndNext;        // Next send sequence number
    uint32_t rcvNext;        // Next expected receive sequence number (legacy, prefer nextByteExpected)
+
+   // FIN / teardown tracking
+   bool     finInFlight;    // TRUE if we have sent a FIN not yet ACKed
+   uint32_t finSeq;         // Sequence number of our FIN byte
+   bool     finReceived;    // TRUE if we have received a FIN from peer
+   uint32_t timeWaitStart;  // Timestamp when we entered TIME_WAIT (ms)
    
    // Send-side state (for reliability / sliding window)
    uint8_t  sendBuf[SEND_BUF_SIZE];   // app data waiting to be (or already) sent
@@ -115,6 +130,7 @@ implementation {
    static void initRetransQueue();
    static void cleanupAckedRetrans(socket_t fd, uint32_t lastByteAcked);
    static void clearRetransEntriesForSocket(socket_t fd);
+   static error_t sendFin(socket_t fd);
    
    /**
     * Allocate a new socket from the socket table
@@ -137,6 +153,10 @@ implementation {
             sockets[i].irs = 0;
             sockets[i].sndNext = 0;
             sockets[i].rcvNext = 0;
+            sockets[i].finInFlight = FALSE;
+            sockets[i].finSeq = 0;
+            sockets[i].finReceived = FALSE;
+            sockets[i].timeWaitStart = 0;
             
             // Initialize send-side state
             sockets[i].lastByteWritten = 0;
@@ -301,6 +321,8 @@ implementation {
       uint32_t minTimeout;
       uint32_t now;
       uint32_t delta;
+      bool timeWaitFound;
+      uint32_t timeWaitDeadline;
 
       found = FALSE;
       minTimeout = 0;
@@ -313,15 +335,47 @@ implementation {
          }
       }
 
+      now = call RetransTimer.getNow();
+
       if (!found) {
-         if (retransTimerRunning) {
-            call RetransTimer.stop();
-            retransTimerRunning = FALSE;
+         timeWaitFound = FALSE;
+         timeWaitDeadline = 0;
+         for (i = 0; i < MAX_SOCKETS; i++) {
+            socket_cb_t *s = &sockets[i];
+            if (!s->inUse) {
+               continue;
+            }
+            if (s->state == TCP_STATE_TIME_WAIT && s->timeWaitStart > 0) {
+               uint32_t expiry = s->timeWaitStart + TCP_TIME_WAIT;
+               if (!timeWaitFound || expiry < timeWaitDeadline) {
+                  timeWaitDeadline = expiry;
+                  timeWaitFound = TRUE;
+               }
+            }
          }
+
+         if (!timeWaitFound) {
+            if (retransTimerRunning) {
+               call RetransTimer.stop();
+               retransTimerRunning = FALSE;
+            }
+            return;
+         }
+
+         if (timeWaitDeadline <= now) {
+            delta = 1;
+         } else {
+            delta = timeWaitDeadline - now;
+            if (delta == 0) {
+               delta = 1;
+            }
+         }
+
+         call RetransTimer.startOneShot(delta);
+         retransTimerRunning = TRUE;
          return;
       }
 
-      now = call RetransTimer.getNow();
       if (minTimeout <= now) {
          delta = 1;
       } else {
@@ -485,6 +539,60 @@ implementation {
       dbg("Project3TCP", "trySendData: exited (fd=%hhu, lastByteSent=%lu, inFlight=%lu)\n",
           fd, s->lastByteSent, inFlight);
    }
+
+   /**
+    * Send FIN segment for socket
+    */
+   static error_t sendFin(socket_t fd) {
+      socket_cb_t *s;
+      uint32_t seqNum;
+      uint16_t advWin;
+      error_t err;
+      uint32_t now;
+
+      if (fd >= MAX_SOCKETS || !sockets[fd].inUse) {
+         return FAIL;
+      }
+
+      s = &sockets[fd];
+
+      seqNum = s->lastByteSent + 1;  // FIN consumes one sequence number
+      advWin = s->advWindow;
+      if (advWin == 0) {
+         advWin = computeRecvFreeSpace(fd);
+         s->advWindow = advWin;
+      }
+
+      dbg("Project3TCP", "sendFin(): fd=%hhu seq=%lu\n", fd, (unsigned long)seqNum);
+
+      err = sendSegment(
+         s->remoteAddr,
+         s->localPort,
+         s->remotePort,
+         seqNum,
+         s->nextByteExpected,
+         (TCP_FLAG_FIN | TCP_FLAG_ACK),
+         advWin,
+         NULL,
+         0
+      );
+
+      if (err != SUCCESS) {
+         dbg("Project3TCP", "sendFin(): sendSegment failed fd=%hhu\n", fd);
+         return err;
+      }
+
+      // Update send state
+      s->lastByteSent = seqNum;
+      s->sndNext = s->lastByteSent + 1;
+      s->finInFlight = TRUE;
+      s->finSeq = seqNum;
+
+      now = call RetransTimer.getNow();
+      enqueueRetrans(fd, seqNum, 1, now);
+
+      return SUCCESS;
+   }
    
    /**
     * Handle a received TCP segment for a specific socket
@@ -619,9 +727,231 @@ implementation {
                   0
                );
             }
+
+            // 3) Handle FIN from peer (passive close)
+            if (flags & TCP_FLAG_FIN) {
+               uint32_t finSeq;
+               uint32_t ackFin;
+               uint16_t advWin;
+
+               finSeq = seg->header.seq;
+               ackFin = finSeq + 1;  // FIN consumes one sequence number
+
+               dbg("Project3TCP", "ESTABLISHED: fd=%hhu received FIN seq=%lu\n",
+                   fd, (unsigned long)finSeq);
+
+               if (s->nextByteExpected < ackFin) {
+                  s->nextByteExpected = ackFin;
+               }
+
+               advWin = computeRecvFreeSpace(fd);
+               s->advWindow = advWin;
+
+               sendSegment(
+                  s->remoteAddr,
+                  s->localPort,
+                  s->remotePort,
+                  s->sndNext,
+                  s->nextByteExpected,
+                  TCP_FLAG_ACK,
+                  advWin,
+                  NULL,
+                  0
+               );
+
+               s->finReceived = TRUE;
+               s->state = TCP_STATE_CLOSE_WAIT;
+               dbg("Project3TCP", "ESTABLISHED: fd=%hhu -> CLOSE_WAIT\n", fd);
+               return;
+            }
             
             break;
          }
+
+         case TCP_STATE_FIN_WAIT_1: {
+            uint32_t ackNum;
+
+            dbg("Project3TCP", "FIN_WAIT_1: fd=%hhu segment flags=%u\n", fd, flags);
+
+            if (flags & TCP_FLAG_ACK) {
+               ackNum = seg->header.ack;
+               if (ackNum > 0 && ackNum - 1 > s->lastByteAcked) {
+                  s->lastByteAcked = ackNum - 1;
+                  cleanupAckedRetrans(fd, s->lastByteAcked);
+               }
+               s->remoteAdvWindow = seg->header.advWindow;
+
+               if (s->finInFlight && s->lastByteAcked >= s->finSeq) {
+                  s->finInFlight = FALSE;
+                  s->state = TCP_STATE_FIN_WAIT_2;
+                  dbg("Project3TCP", "FIN_WAIT_1: fd=%hhu -> FIN_WAIT_2\n", fd);
+               }
+            }
+
+            if (flags & TCP_FLAG_FIN) {
+               uint32_t finSeq = seg->header.seq;
+               uint32_t ackFin = finSeq + 1;
+               uint16_t advWin = computeRecvFreeSpace(fd);
+
+               dbg("Project3TCP", "FIN_WAIT_1: fd=%hhu received FIN seq=%lu\n",
+                   fd, (unsigned long)finSeq);
+
+               if (s->nextByteExpected < ackFin) {
+                  s->nextByteExpected = ackFin;
+               }
+
+               s->advWindow = advWin;
+               sendSegment(
+                  s->remoteAddr,
+                  s->localPort,
+                  s->remotePort,
+                  s->sndNext,
+                  s->nextByteExpected,
+                  TCP_FLAG_ACK,
+                  advWin,
+                  NULL,
+                  0
+               );
+
+               s->state = TCP_STATE_TIME_WAIT;
+               s->timeWaitStart = call RetransTimer.getNow();
+               dbg("Project3TCP", "FIN_WAIT_1: fd=%hhu -> TIME_WAIT\n", fd);
+            }
+
+            break;
+         }
+
+         case TCP_STATE_FIN_WAIT_2: {
+            dbg("Project3TCP", "FIN_WAIT_2: fd=%hhu segment flags=%u\n", fd, flags);
+
+            if (flags & TCP_FLAG_ACK) {
+               uint32_t ackNum = seg->header.ack;
+               if (ackNum > 0 && ackNum - 1 > s->lastByteAcked) {
+                  s->lastByteAcked = ackNum - 1;
+                  cleanupAckedRetrans(fd, s->lastByteAcked);
+               }
+               s->remoteAdvWindow = seg->header.advWindow;
+            }
+
+            if (flags & TCP_FLAG_FIN) {
+               uint32_t finSeq = seg->header.seq;
+               uint32_t ackFin = finSeq + 1;
+               uint16_t advWin = computeRecvFreeSpace(fd);
+
+               dbg("Project3TCP", "FIN_WAIT_2: fd=%hhu received FIN seq=%lu\n",
+                   fd, (unsigned long)finSeq);
+
+               if (s->nextByteExpected < ackFin) {
+                  s->nextByteExpected = ackFin;
+               }
+
+               s->advWindow = advWin;
+               sendSegment(
+                  s->remoteAddr,
+                  s->localPort,
+                  s->remotePort,
+                  s->sndNext,
+                  s->nextByteExpected,
+                  TCP_FLAG_ACK,
+                  advWin,
+                  NULL,
+                  0
+               );
+
+               s->state = TCP_STATE_TIME_WAIT;
+               s->timeWaitStart = call RetransTimer.getNow();
+               dbg("Project3TCP", "FIN_WAIT_2: fd=%hhu -> TIME_WAIT\n", fd);
+            }
+
+            break;
+         }
+
+         case TCP_STATE_CLOSE_WAIT:
+            dbg("Project3TCP", "CLOSE_WAIT: fd=%hhu received segment (flags=%u)\n", fd, flags);
+            // Ignore data; ACK duplicate FINs if they arrive
+            if (flags & TCP_FLAG_FIN) {
+               uint32_t finSeq = seg->header.seq;
+               uint32_t ackFin = finSeq + 1;
+               uint16_t advWin = computeRecvFreeSpace(fd);
+               if (s->nextByteExpected < ackFin) {
+                  s->nextByteExpected = ackFin;
+               }
+               s->advWindow = advWin;
+               sendSegment(
+                  s->remoteAddr,
+                  s->localPort,
+                  s->remotePort,
+                  s->sndNext,
+                  s->nextByteExpected,
+                  TCP_FLAG_ACK,
+                  advWin,
+                  NULL,
+                  0
+               );
+            }
+            break;
+
+         case TCP_STATE_LAST_ACK:
+            dbg("Project3TCP", "LAST_ACK: fd=%hhu segment flags=%u\n", fd, flags);
+            if (flags & TCP_FLAG_ACK) {
+               uint32_t ackNum = seg->header.ack;
+               if (ackNum > 0 && ackNum - 1 > s->lastByteAcked) {
+                  s->lastByteAcked = ackNum - 1;
+                  cleanupAckedRetrans(fd, s->lastByteAcked);
+               }
+               s->remoteAdvWindow = seg->header.advWindow;
+               if (s->finInFlight && s->lastByteAcked >= s->finSeq) {
+                  s->finInFlight = FALSE;
+                  dbg("Project3TCP", "LAST_ACK: fd=%hhu FIN ACKed, closing\n", fd);
+                  freeSocket(fd);
+                  return;
+               }
+            }
+            if (flags & TCP_FLAG_FIN) {
+               uint32_t finSeq = seg->header.seq;
+               uint32_t ackFin = finSeq + 1;
+               uint16_t advWin = computeRecvFreeSpace(fd);
+               if (s->nextByteExpected < ackFin) {
+                  s->nextByteExpected = ackFin;
+               }
+               s->advWindow = advWin;
+               sendSegment(
+                  s->remoteAddr,
+                  s->localPort,
+                  s->remotePort,
+                  s->sndNext,
+                  s->nextByteExpected,
+                  TCP_FLAG_ACK,
+                  advWin,
+                  NULL,
+                  0
+               );
+            }
+            break;
+
+         case TCP_STATE_TIME_WAIT:
+            dbg("Project3TCP", "TIME_WAIT: fd=%hhu segment flags=%u (ignored)\n", fd, flags);
+            if (flags & TCP_FLAG_FIN) {
+               uint32_t finSeq = seg->header.seq;
+               uint32_t ackFin = finSeq + 1;
+               uint16_t advWin = computeRecvFreeSpace(fd);
+               if (s->nextByteExpected < ackFin) {
+                  s->nextByteExpected = ackFin;
+               }
+               s->advWindow = advWin;
+               sendSegment(
+                  s->remoteAddr,
+                  s->localPort,
+                  s->remotePort,
+                  s->sndNext,
+                  s->nextByteExpected,
+                  TCP_FLAG_ACK,
+                  advWin,
+                  NULL,
+                  0
+               );
+            }
+            break;
             
          default:
             // Ignore segments in other states for now
@@ -1093,20 +1423,41 @@ implementation {
    }
 
    command error_t Transport.close(socket_t fd) {
+      socket_cb_t *s;
       if (fd >= MAX_SOCKETS || !sockets[fd].inUse) {
          return FAIL;
       }
 
-      dbg("Project3TCP", "close(): fd=%hhu state=%hhu local=%hu:%hu remote=%hu:%hu\n",
-          fd,
-          sockets[fd].state,
-          sockets[fd].localAddr,
-          sockets[fd].localPort,
-          sockets[fd].remoteAddr,
-          sockets[fd].remotePort);
+      s = &sockets[fd];
 
-      freeSocket(fd);
-      return SUCCESS;
+      dbg("Project3TCP", "close(): fd=%hhu state=%hhu local=%hu:%hu remote=%hu:%hu\n",
+          fd, s->state, s->localAddr, s->localPort, s->remoteAddr, s->remotePort);
+
+      switch (s->state) {
+         case TCP_STATE_ESTABLISHED:
+            dbg("Project3TCP", "close(): active close fd=%hhu\n", fd);
+            trySendData(fd);
+            if (sendFin(fd) == SUCCESS) {
+               s->state = TCP_STATE_FIN_WAIT_1;
+               return SUCCESS;
+            }
+            freeSocket(fd);
+            return FAIL;
+
+         case TCP_STATE_CLOSE_WAIT:
+            dbg("Project3TCP", "close(): passive close fd=%hhu\n", fd);
+            if (sendFin(fd) == SUCCESS) {
+               s->state = TCP_STATE_LAST_ACK;
+               return SUCCESS;
+            }
+            freeSocket(fd);
+            return FAIL;
+
+         default:
+            dbg("Project3TCP", "close(): hard close fd=%hhu state=%hhu\n", fd, s->state);
+            freeSocket(fd);
+            return SUCCESS;
+      }
    }
 
    command error_t Transport.release(socket_t fd) {
@@ -1135,6 +1486,20 @@ implementation {
       found = FALSE;
       earliestIdx = 0;
 
+      // Clean up TIME_WAIT sockets
+      for (i = 0; i < MAX_SOCKETS; i++) {
+         socket_cb_t *ts = &sockets[i];
+         if (!ts->inUse) {
+            continue;
+         }
+         if (ts->state == TCP_STATE_TIME_WAIT &&
+             ts->timeWaitStart > 0 &&
+             (now - ts->timeWaitStart) >= TCP_TIME_WAIT) {
+            dbg("Project3TCP", "TIME_WAIT expired: fd=%hhu closing\n", i);
+            freeSocket(i);
+         }
+      }
+
       for (i = 0; i < MAX_RETRANS_QUEUE; i++) {
          if (retransQueue[i].inUse) {
             if (!found || retransQueue[i].timeoutAt < retransQueue[earliestIdx].timeoutAt) {
@@ -1146,6 +1511,7 @@ implementation {
 
       if (!found) {
          retransTimerRunning = FALSE;
+         scheduleRetransTimer();
          return;
       }
 
@@ -1164,10 +1530,23 @@ implementation {
 
       s = &sockets[entry->fd];
 
-      if (!s->inUse || s->state != TCP_STATE_ESTABLISHED) {
+      if (!s->inUse) {
          entry->inUse = FALSE;
          scheduleRetransTimer();
          return;
+      }
+
+      switch (s->state) {
+         case TCP_STATE_ESTABLISHED:
+         case TCP_STATE_FIN_WAIT_1:
+         case TCP_STATE_FIN_WAIT_2:
+         case TCP_STATE_CLOSE_WAIT:
+         case TCP_STATE_LAST_ACK:
+            break;
+         default:
+            entry->inUse = FALSE;
+            scheduleRetransTimer();
+            return;
       }
 
       seqEnd = entry->seqStart + entry->len - 1;
