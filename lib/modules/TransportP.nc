@@ -115,7 +115,7 @@ implementation {
          return s->lastByteSent - s->lastByteAcked;
       } else {
          // Safety clamp: ACK should never be ahead of what we've sent.
-         dbg("Project3TCP",
+         dbg(TRANSPORT_CHANNEL,
              "CC WARNING: lastByteAcked(%u) > lastByteSent(%u), clamping\n",
              (unsigned int)s->lastByteAcked,
              (unsigned int)s->lastByteSent);
@@ -417,7 +417,7 @@ implementation {
          }
       }
 
-      dbg("Project3TCP", "Retrans queue full, dropping seqStart=%lu len=%hu\n",
+      dbg(TRANSPORT_CHANNEL, "Retrans queue full, dropping seqStart=%lu len=%hu\n",
           (unsigned long)seqStart, len);
    }
 
@@ -595,7 +595,7 @@ implementation {
          s->advWindow = advWin;
       }
 
-      dbg("Project3TCP", "sendFin(): fd=%hhu seq=%lu\n", fd, (unsigned long)seqNum);
+      dbg(TRANSPORT_CHANNEL, "sendFin(): fd=%hhu seq=%lu\n", fd, (unsigned long)seqNum);
 
       err = sendSegment(
          s->remoteAddr,
@@ -610,7 +610,7 @@ implementation {
       );
 
       if (err != SUCCESS) {
-         dbg("Project3TCP", "sendFin(): sendSegment failed fd=%hhu\n", fd);
+         dbg(TRANSPORT_CHANNEL, "sendFin(): sendSegment failed fd=%hhu\n", fd);
          return err;
       }
 
@@ -744,7 +744,7 @@ implementation {
                   uint32_t proposed = ackNum - 1;
                   if (proposed > s->lastByteAcked) {
                      if (proposed > s->lastByteSent) {
-                        dbg("Project3TCP",
+                        dbg(TRANSPORT_CHANNEL,
                             "CC WARNING: proposed lastByteAcked(%u) > lastByteSent(%u), clamping\n",
                             (unsigned int)proposed,
                             (unsigned int)s->lastByteSent);
@@ -864,7 +864,7 @@ implementation {
                finSeq = seg->header.seq;
                ackFin = finSeq + 1;  // FIN consumes one sequence number
 
-               dbg("Project3TCP", "ESTABLISHED: fd=%hhu received FIN seq=%lu\n",
+               dbg(TRANSPORT_CHANNEL, "ESTABLISHED: fd=%hhu received FIN seq=%lu\n",
                    fd, (unsigned long)finSeq);
 
                if (s->nextByteExpected < ackFin) {
@@ -888,7 +888,7 @@ implementation {
 
                s->finReceived = TRUE;
                s->state = TCP_STATE_CLOSE_WAIT;
-               dbg("Project3TCP", "ESTABLISHED: fd=%hhu -> CLOSE_WAIT\n", fd);
+               dbg(TRANSPORT_CHANNEL, "ESTABLISHED: fd=%hhu -> CLOSE_WAIT\n", fd);
                return;
             }
             
@@ -898,7 +898,7 @@ implementation {
          case TCP_STATE_FIN_WAIT_1: {
             uint32_t ackNum;
 
-            dbg("Project3TCP", "FIN_WAIT_1: fd=%hhu segment flags=%u\n", fd, flags);
+            dbg(TRANSPORT_CHANNEL, "FIN_WAIT_1: fd=%hhu segment flags=%u\n", fd, flags);
 
             if (flags & TCP_FLAG_ACK) {
                ackNum = seg->header.ack;
@@ -911,7 +911,7 @@ implementation {
                if (s->finInFlight && s->lastByteAcked >= s->finSeq) {
                   s->finInFlight = FALSE;
                   s->state = TCP_STATE_FIN_WAIT_2;
-                  dbg("Project3TCP", "FIN_WAIT_1: fd=%hhu -> FIN_WAIT_2\n", fd);
+                  dbg(TRANSPORT_CHANNEL, "FIN_WAIT_1: fd=%hhu -> FIN_WAIT_2\n", fd);
                }
             }
 
@@ -920,7 +920,7 @@ implementation {
                uint32_t ackFin = finSeq + 1;
                uint16_t advWin = computeRecvFreeSpace(fd);
 
-               dbg("Project3TCP", "FIN_WAIT_1: fd=%hhu received FIN seq=%lu\n",
+               dbg(TRANSPORT_CHANNEL, "FIN_WAIT_1: fd=%hhu received FIN seq=%lu\n",
                    fd, (unsigned long)finSeq);
 
                if (s->nextByteExpected < ackFin) {
@@ -942,14 +942,14 @@ implementation {
 
                s->state = TCP_STATE_TIME_WAIT;
                s->timeWaitStart = call RetransTimer.getNow();
-               dbg("Project3TCP", "FIN_WAIT_1: fd=%hhu -> TIME_WAIT\n", fd);
+               dbg(TRANSPORT_CHANNEL, "FIN_WAIT_1: fd=%hhu -> TIME_WAIT\n", fd);
             }
 
             break;
          }
 
          case TCP_STATE_FIN_WAIT_2: {
-            dbg("Project3TCP", "FIN_WAIT_2: fd=%hhu segment flags=%u\n", fd, flags);
+            dbg(TRANSPORT_CHANNEL, "FIN_WAIT_2: fd=%hhu segment flags=%u\n", fd, flags);
 
             if (flags & TCP_FLAG_ACK) {
                uint32_t ackNum = seg->header.ack;
@@ -965,7 +965,7 @@ implementation {
                uint32_t ackFin = finSeq + 1;
                uint16_t advWin = computeRecvFreeSpace(fd);
 
-               dbg("Project3TCP", "FIN_WAIT_2: fd=%hhu received FIN seq=%lu\n",
+               dbg(TRANSPORT_CHANNEL, "FIN_WAIT_2: fd=%hhu received FIN seq=%lu\n",
                    fd, (unsigned long)finSeq);
 
                if (s->nextByteExpected < ackFin) {
@@ -987,14 +987,14 @@ implementation {
 
                s->state = TCP_STATE_TIME_WAIT;
                s->timeWaitStart = call RetransTimer.getNow();
-               dbg("Project3TCP", "FIN_WAIT_2: fd=%hhu -> TIME_WAIT\n", fd);
+               dbg(TRANSPORT_CHANNEL, "FIN_WAIT_2: fd=%hhu -> TIME_WAIT\n", fd);
             }
 
             break;
          }
 
          case TCP_STATE_CLOSE_WAIT:
-            dbg("Project3TCP", "CLOSE_WAIT: fd=%hhu received segment (flags=%u)\n", fd, flags);
+            dbg(TRANSPORT_CHANNEL, "CLOSE_WAIT: fd=%hhu received segment (flags=%u)\n", fd, flags);
             // Ignore data; ACK duplicate FINs if they arrive
             if (flags & TCP_FLAG_FIN) {
                uint32_t finSeq = seg->header.seq;
@@ -1019,7 +1019,7 @@ implementation {
             break;
 
          case TCP_STATE_LAST_ACK:
-            dbg("Project3TCP", "LAST_ACK: fd=%hhu segment flags=%u\n", fd, flags);
+            dbg(TRANSPORT_CHANNEL, "LAST_ACK: fd=%hhu segment flags=%u\n", fd, flags);
             if (flags & TCP_FLAG_ACK) {
                uint32_t ackNum = seg->header.ack;
                if (ackNum > 0 && ackNum - 1 > s->lastByteAcked) {
@@ -1029,7 +1029,7 @@ implementation {
                s->remoteAdvWindow = seg->header.advWindow;
                if (s->finInFlight && s->lastByteAcked >= s->finSeq) {
                   s->finInFlight = FALSE;
-                  dbg("Project3TCP", "LAST_ACK: fd=%hhu FIN ACKed, closing\n", fd);
+                  dbg(TRANSPORT_CHANNEL, "LAST_ACK: fd=%hhu FIN ACKed, closing\n", fd);
                   freeSocket(fd);
                   return;
                }
@@ -1057,7 +1057,7 @@ implementation {
             break;
 
          case TCP_STATE_TIME_WAIT:
-            dbg("Project3TCP", "TIME_WAIT: fd=%hhu segment flags=%u (ignored)\n", fd, flags);
+            dbg(TRANSPORT_CHANNEL, "TIME_WAIT: fd=%hhu segment flags=%u (ignored)\n", fd, flags);
             if (flags & TCP_FLAG_FIN) {
                uint32_t finSeq = seg->header.seq;
                uint32_t ackFin = finSeq + 1;
@@ -1109,7 +1109,7 @@ implementation {
       pack sendPack;
 
       
-      dbg("Project 3 - TCP", "sendSegment called: dst=%d srcPort=%d dstPort=%d\n", dstAddr, srcPort, dstPort);
+      dbg(TRANSPORT_CHANNEL, "sendSegment called: dst=%d srcPort=%d dstPort=%d\n", dstAddr, srcPort, dstPort);
       
       // Fill in TCP header
       tcpSeg.header.srcPort = srcPort;
@@ -1141,13 +1141,13 @@ implementation {
       
       // Get next hop for destination
       nextHop = call LinkState.nextHop(dstAddr);   // call routing
-      dbg("Project 3 - TCP", "sendSegment: nextHop returned %d for dst %d\n", nextHop, dstAddr);
+      dbg(TRANSPORT_CHANNEL, "sendSegment: nextHop returned %d for dst %d\n", nextHop, dstAddr);
       if (nextHop == 0xFFFF) {
-         dbg("Project 3 - TCP", "sendSegment: no route to %d (routing may not have converged yet)\n", dstAddr);
+         dbg(TRANSPORT_CHANNEL, "sendSegment: no route to %d (routing may not have converged yet)\n", dstAddr);
          return FAIL;
       }
       
-      dbg("Project 3 - TCP", "sendSegment: nextHop=%d, sending\n", nextHop);
+      dbg(TRANSPORT_CHANNEL, "sendSegment: nextHop=%d, sending\n", nextHop);
       
       // Create pack struct to send via SimpleSend
       // NOTE: The TCP segment is placed in the payload field of the pack struct
@@ -1159,18 +1159,18 @@ implementation {
       
       // Copy TCP segment into pack payload
       if (len > PACKET_MAX_PAYLOAD_SIZE) {
-         dbg("Project 3 - TCP", "sendSegment: segment too large\n");
+         dbg(TRANSPORT_CHANNEL, "sendSegment: segment too large\n");
          return FAIL;
       }
       memcpy(sendPack.payload, (uint8_t *)&tcpSeg, len);
       
       // Send via SimpleSend to next hop
       if (call SimpleSend.send(sendPack, nextHop) == SUCCESS) {
-         dbg("Project 3 - TCP", "sendSegment: sent successfully\n");
+         dbg(TRANSPORT_CHANNEL, "sendSegment: sent successfully\n");
          return SUCCESS;
       }
       
-      dbg("Project 3 - TCP", "sendSegment: SimpleSend.send failed\n");
+      dbg(TRANSPORT_CHANNEL, "sendSegment: SimpleSend.send failed\n");
       return FAIL;
    }
 
@@ -1193,7 +1193,7 @@ implementation {
       s->isServer = FALSE;
       s->pendingAccept = FALSE;
 
-      dbg("Project3TCP", "socket(): allocated fd=%hhu\n", fd);
+      dbg(TRANSPORT_CHANNEL, "socket(): allocated fd=%hhu\n", fd);
       return fd;
    }
 
@@ -1225,7 +1225,7 @@ implementation {
          }
       }
 
-      dbg("Project3TCP", "bind(): fd=%hhu addr=%hu port=%hu\n",
+      dbg(TRANSPORT_CHANNEL, "bind(): fd=%hhu addr=%hu port=%hu\n",
           fd, s->localAddr, s->localPort);
       return SUCCESS;
    }
@@ -1275,7 +1275,7 @@ implementation {
       }
 
       s->state = TCP_STATE_LISTEN;
-      dbg("Project3TCP", "listen(): fd=%hhu on port=%hu\n", fd, s->localPort);
+      dbg(TRANSPORT_CHANNEL, "listen(): fd=%hhu on port=%hu\n", fd, s->localPort);
       return SUCCESS;
    }
 
@@ -1350,7 +1350,7 @@ implementation {
       used = s->lastByteWritten - s->lastByteAcked;
       if (used >= SEND_BUF_SIZE) {
          // No space in send buffer
-         dbg("Project3TCP", "write: fd=%hhu no space (used=%lu)\n", fd, (unsigned long)used);
+         dbg(TRANSPORT_CHANNEL, "write: fd=%hhu no space (used=%lu)\n", fd, (unsigned long)used);
          return 0;
       }
 
@@ -1389,7 +1389,7 @@ implementation {
 
       s->lastByteWritten += toCopy;
 
-      dbg("Project3TCP",
+      dbg(TRANSPORT_CHANNEL,
           "write: fd=%hhu wrote=%hu used=%lu free=%hu lastWritten=%lu state=%hhu\n",
           fd, toCopy, (unsigned long)used, freeSpace, (unsigned long)s->lastByteWritten, s->state);
 
@@ -1484,7 +1484,7 @@ implementation {
 
       s->lastByteRead += toCopy;
 
-      dbg("Project3TCP",
+      dbg(TRANSPORT_CHANNEL,
           "read: fd=%hhu read=%hu available=%lu lastByteRead=%lu\n",
           fd, toCopy, (unsigned long)available, (unsigned long)s->lastByteRead);
 
@@ -1494,7 +1494,7 @@ implementation {
       freeSpace = computeRecvFreeSpace(fd);
       if (freeSpace != s->advWindow) {
          s->advWindow = freeSpace;
-         dbg("Project3TCP",
+         dbg(TRANSPORT_CHANNEL,
              "read: fd=%hhu sending window update ACK ack=%lu advWindow=%u\n",
              fd, (unsigned long)s->nextByteExpected, s->advWindow);
          sendSegment(
@@ -1528,7 +1528,7 @@ implementation {
       uint16_t advWindow;
       socket_t fd;
       
-      dbg("Project 3 - TCP", "Transport.receive called, protocol=%d\n", package->protocol);
+      dbg(TRANSPORT_CHANNEL, "Transport.receive called, protocol=%d\n", package->protocol);
       
       // Only process TCP protocol packets
       if (package->protocol != PROTOCOL_TCP) {
@@ -1604,18 +1604,18 @@ implementation {
                   } else {
                      // Failed to send SYN+ACK, free the socket
                      freeSocket(newFd);
-                     dbg("Project3TCP", "Failed to send SYN+ACK, freeing socket %hhu\n", newFd);
+                     dbg(TRANSPORT_CHANNEL, "Failed to send SYN+ACK, freeing socket %hhu\n", newFd);
                   }
                } else {
                   dbg(TRANSPORT_CHANNEL, "No free socket available for new connection\n");
                }
             } else {
                // No listening socket on this port
-               dbg("Project3TCP", "SYN received but no listening socket on port %hu\n", dstPort);
+               dbg(TRANSPORT_CHANNEL, "SYN received but no listening socket on port %hu\n", dstPort);
             }
          } else {
             // Not a SYN and no matching socket - drop it
-            dbg("Project 3 - TCP", "RX TCP with no matching socket (local %hu:%hu, remote %hu:%hu)\n", 
+            dbg(TRANSPORT_CHANNEL, "RX TCP with no matching socket (local %hu:%hu, remote %hu:%hu)\n", 
                 dstAddr, dstPort, srcAddr, srcPort);
          }
       }
@@ -1631,12 +1631,12 @@ implementation {
 
       s = &sockets[fd];
 
-      dbg("Project3TCP", "close(): fd=%hhu state=%hhu local=%hu:%hu remote=%hu:%hu\n",
+      dbg(TRANSPORT_CHANNEL, "close(): fd=%hhu state=%hhu local=%hu:%hu remote=%hu:%hu\n",
           fd, s->state, s->localAddr, s->localPort, s->remoteAddr, s->remotePort);
 
       switch (s->state) {
          case TCP_STATE_ESTABLISHED:
-            dbg("Project3TCP", "close(): active close fd=%hhu\n", fd);
+            dbg(TRANSPORT_CHANNEL, "close(): active close fd=%hhu\n", fd);
             trySendData(fd);
             if (sendFin(fd) == SUCCESS) {
                s->state = TCP_STATE_FIN_WAIT_1;
@@ -1646,7 +1646,7 @@ implementation {
             return FAIL;
 
          case TCP_STATE_CLOSE_WAIT:
-            dbg("Project3TCP", "close(): passive close fd=%hhu\n", fd);
+            dbg(TRANSPORT_CHANNEL, "close(): passive close fd=%hhu\n", fd);
             if (sendFin(fd) == SUCCESS) {
                s->state = TCP_STATE_LAST_ACK;
                return SUCCESS;
@@ -1655,7 +1655,7 @@ implementation {
             return FAIL;
 
          default:
-            dbg("Project3TCP", "close(): hard close fd=%hhu state=%hhu\n", fd, s->state);
+            dbg(TRANSPORT_CHANNEL, "close(): hard close fd=%hhu state=%hhu\n", fd, s->state);
             freeSocket(fd);
             return SUCCESS;
       }
@@ -1669,7 +1669,7 @@ implementation {
 
    // Testing TCP infra
    event void Boot.booted() {
-      dbg("Project 3 - TCP", "Transport booted\n");
+      dbg(TRANSPORT_CHANNEL, "Transport booted\n");
       initRetransQueue();
       call TestTimer.startOneShot(10000);  // 10 seconds to let routing converge
    }
@@ -1696,7 +1696,7 @@ implementation {
          if (ts->state == TCP_STATE_TIME_WAIT &&
              ts->timeWaitStart > 0 &&
              (now - ts->timeWaitStart) >= TCP_TIME_WAIT) {
-            dbg("Project3TCP", "TIME_WAIT expired: fd=%hhu closing\n", i);
+            dbg(TRANSPORT_CHANNEL, "TIME_WAIT expired: fd=%hhu closing\n", i);
             freeSocket(i);
          }
       }
@@ -1786,7 +1786,7 @@ implementation {
    }
    
    event void TestTimer.fired() {
-      dbg("Project 3 - TCP", "Timer fired, calling sendSegment\n");
+      dbg(TRANSPORT_CHANNEL, "Timer fired, calling sendSegment\n");
       // Send to node 2 (direct neighbor) for routing to work immediately
       sendSegment(2, 1234, 5678, 0, 0, TCP_FLAG_SYN, 100, NULL, 0);
    }
