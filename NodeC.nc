@@ -34,6 +34,11 @@ implementation {
     components new TimerMilliC();
     Node.NDTimer -> TimerMilliC;
 
+    components new TimerMilliC() as ServerTimerC;
+    components new TimerMilliC() as ClientTimerC;
+    Node.ServerTimer -> ServerTimerC;
+    Node.ClientTimer -> ClientTimerC;
+
     // Neighbor Discovery module
     components new NeighborDiscoveryC(6) as NeighborDiscoveryC;
     Node.ND -> NeighborDiscoveryC.NeighborDiscovery;

@@ -41,14 +41,7 @@ enum {
 #define TCP_TIME_WAIT 5000  // ms
 #endif
 
-// Max segment data size (MSS) – keep within existing packet size constraints
-// PACKET_MAX_PAYLOAD_SIZE = 20, TCP header = 15 bytes, so max TCP data = 5 bytes
-#ifndef TCP_MSS
-#define TCP_MSS 5   // Max TCP data that fits in pack.payload (20 - 15 header)
-#endif
-
 #define MAX_SOCKETS 8
-#define NULL_SOCKET 0xFF
 
 // Retransmission tracking
 typedef struct {
@@ -259,9 +252,9 @@ implementation {
       // Set state to SYN_SENT
       s->state = TCP_STATE_SYN_SENT;
       
-      // Choose initial sequence number
-      s->iss = 1;
-      s->sndNext = s->iss + 1;  // SYN consumes one sequence number
+      // Choose initial sequence number (start at 0, SYN is seq=0, first data is seq=1)
+      s->iss = 0;
+      s->sndNext = s->iss + 1;  // Next seq after SYN
       
       // Initialize receive sequence numbers and advertised window
       s->irs = 0;
@@ -454,6 +447,7 @@ implementation {
       uint16_t dataLen;
       uint32_t seqNum;
       uint16_t bufIndex;
+      uint16_t spaceToEnd;
       uint32_t ackToSend;
       
       if (fd >= MAX_SOCKETS || !sockets[fd].inUse) {
@@ -501,8 +495,14 @@ implementation {
          // Compute sequence number of first byte in this segment
          seqNum = s->lastByteSent + 1;
          
-         // Map seqNum (1-based) to buffer index (0-based)
-         bufIndex = (uint16_t)(seqNum - 1);
+         // Map seqNum (1-based) to buffer index (0-based, circular)
+         bufIndex = (uint16_t)((seqNum - 1) % SEND_BUF_SIZE);
+
+         // Ensure we never run past the end of the circular buffer in this segment
+         spaceToEnd = (uint16_t)(SEND_BUF_SIZE - bufIndex);
+         if (dataLen > spaceToEnd) {
+            dataLen = spaceToEnd;
+         }
          
          // Build and send segment
          if (sendSegment(
@@ -621,12 +621,21 @@ implementation {
                   // Record peer's initial sequence number
                   s->irs = seg->header.seq;
                   s->rcvNext = seg->header.seq + 1;  // SYN consumes one sequence number
+
+                  // Initialize receive state for data from server
+                  s->nextByteExpected = s->rcvNext;
+                  s->lastByteRead = 0;
+
+                  // Learn server's advertised window
+                  s->remoteAdvWindow = seg->header.advWindow;
                   
                   // Send final ACK
                   if (sendSegment(s->remoteAddr, s->localPort, s->remotePort,
                                   s->sndNext, s->rcvNext, TCP_FLAG_ACK, 0, NULL, 0) == SUCCESS) {
                      s->state = TCP_STATE_ESTABLISHED;
                      dbg("Project3TCP", "Client: connection ESTABLISHED (fd=%hhu)\n", fd);
+                     // If any application data was queued before connect completed, send it now
+                     trySendData(fd);
                   }
                } else {
                   dbg("Project3TCP", "Client: invalid ACK in SYN+ACK (expected %lu, got %lu)\n", 
@@ -641,8 +650,17 @@ implementation {
             if ((flags & TCP_FLAG_ACK) && !(flags & TCP_FLAG_SYN)) {
                // Validate ACK acknowledges our SYN and sequence matches
                if (seg->header.ack == s->sndNext && seg->header.seq == s->rcvNext) {
+                  // Initialize receive state for data from client
+                  s->nextByteExpected = s->rcvNext;
+                  s->lastByteRead = 0;
+
+                  // Learn client's advertised window from its ACK
+                  s->remoteAdvWindow = seg->header.advWindow;
+
                   s->state = TCP_STATE_ESTABLISHED;
                   dbg("Project3TCP", "Server: connection ESTABLISHED (fd=%hhu)\n", fd);
+                  // If any application data was queued before connect completed, send it now
+                  trySendData(fd);
                } else {
                   dbg("Project3TCP", "Server: invalid ACK (ack=%lu expected %lu, seq=%lu expected %lu)\n",
                       seg->header.ack, s->sndNext, seg->header.seq, s->rcvNext);
@@ -659,7 +677,10 @@ implementation {
             uint16_t bufIndex;
             uint32_t ackToSend;
             uint16_t freeSpace;
-            
+            uint16_t firstChunk;
+            uint16_t secondChunk;
+            uint16_t spaceToEnd;
+
             ackNum = seg->header.ack;
             seqNum = seg->header.seq;
             
@@ -684,16 +705,28 @@ implementation {
                expected = s->nextByteExpected;
                
                if (seqNum == expected) {
-                  // In-order segment: accept and place in recvBuf
-                  // Map seqNum (1-based) to buffer index (0-based)
-                  bufIndex = (uint16_t)(seqNum - 1);
-                  if (bufIndex + dataLen <= RECV_BUF_SIZE) {
-                     memcpy(&s->recvBuf[bufIndex], seg->data, dataLen);
-                     s->nextByteExpected += dataLen;
-                  } else {
-                     // Out of buffer bounds; drop payload but still ACK current expected
-                     dbg("Project3TCP", "EST: data exceeds recvBuf, dropping payload\n");
+                  // In-order segment: accept and place in recvBuf (circular)
+                  // Map seqNum (1-based) to buffer index (0-based, circular)
+                  bufIndex = (uint16_t)((seqNum - 1) % RECV_BUF_SIZE);
+                  spaceToEnd = (uint16_t)(RECV_BUF_SIZE - bufIndex);
+
+                  // Copy may wrap; split into at most two chunks
+                  firstChunk = dataLen;
+                  if (firstChunk > spaceToEnd) {
+                     firstChunk = spaceToEnd;
                   }
+
+                  if (firstChunk > 0) {
+                     memcpy(&s->recvBuf[bufIndex], seg->data, firstChunk);
+                  }
+
+                  secondChunk = dataLen - firstChunk;
+                  if (secondChunk > 0) {
+                     memcpy(&s->recvBuf[0], seg->data + firstChunk, secondChunk);
+                  }
+
+                  // Advance expected sequence by full dataLen accepted
+                  s->nextByteExpected += dataLen;
                } else if (seqNum < expected) {
                   // Duplicate or already received; ignore payload
                   dbg("Project3TCP", "EST: duplicate data seq=%lu expected=%lu\n",
@@ -991,16 +1024,23 @@ implementation {
       tcpSeg.header.ack = ack;
       tcpSeg.header.flags = flags;
       tcpSeg.header.advWindow = advWindow;
-      
+
       // Copy data payload if provided
       if (dataLen > 0 && data != NULL) {
+         // Enforce both TCP_MAX_DATA and TCP_MSS limits
          if (dataLen > TCP_MAX_DATA) {
-            dataLen = TCP_MAX_DATA;  // Truncate if too large
+            dataLen = TCP_MAX_DATA;
+         }
+         if (dataLen > TCP_MSS) {
+            dataLen = TCP_MSS;
          }
          memcpy(tcpSeg.data, data, dataLen);
       } else {
          dataLen = 0;
       }
+
+      // Set dataLen in header to tell receiver exact payload size
+      tcpSeg.header.dataLen = dataLen;
       
       // Calculate total segment length
       len = sizeof(tcp_header_t) + dataLen;
@@ -1194,13 +1234,23 @@ implementation {
       uint16_t freeSpace;
       uint16_t toCopy;
       uint32_t startIndex;
+      uint16_t firstChunk;
+      uint16_t spaceToEnd;
+      uint16_t secondChunk;
 
       // Validate socket
-      if (fd >= MAX_SOCKETS || !sockets[fd].inUse || sockets[fd].state != TCP_STATE_ESTABLISHED) {
+      if (fd >= MAX_SOCKETS || !sockets[fd].inUse) {
          return 0;
       }
 
       s = &sockets[fd];
+
+      // Only allow writes on connected or closing connections
+      if (s->state != TCP_STATE_ESTABLISHED &&
+          s->state != TCP_STATE_SYN_SENT &&
+          s->state != TCP_STATE_CLOSE_WAIT) {
+         return 0;
+      }
 
       // Bytes currently buffered but not yet ACKed
       used = s->lastByteWritten - s->lastByteAcked;
@@ -1220,28 +1270,32 @@ implementation {
          return 0;
       }
 
-      // Starting index into sendBuf for new data (0-based)
-      startIndex = s->lastByteWritten;
-      if (startIndex >= SEND_BUF_SIZE) {
-         // Clamp to end to avoid overflow
-         startIndex = SEND_BUF_SIZE;
-      }
-      if (startIndex + toCopy > SEND_BUF_SIZE) {
-         toCopy = (uint16_t)(SEND_BUF_SIZE - startIndex);
-      }
-      if (toCopy == 0) {
-         return 0;
+      // Starting index into sendBuf for new data (0-based, circular)
+      startIndex = (uint32_t)(s->lastByteWritten % SEND_BUF_SIZE);
+
+      // Copy may wrap; split into at most two chunks
+      spaceToEnd = (uint16_t)(SEND_BUF_SIZE - startIndex);
+      firstChunk = toCopy;
+      if (firstChunk > spaceToEnd) {
+         firstChunk = spaceToEnd;
       }
 
-      // Copy application data into send buffer
-      memcpy(&s->sendBuf[startIndex], buff, toCopy);
+      if (firstChunk > 0) {
+         memcpy(&s->sendBuf[startIndex], buff, firstChunk);
+      }
+
+      secondChunk = toCopy - firstChunk;
+      if (secondChunk > 0) {
+         memcpy(&s->sendBuf[0], buff + firstChunk, secondChunk);
+      }
+
       s->lastByteWritten += toCopy;
 
       dbg("Project3TCP",
-          "write: fd=%hhu wrote=%hu used=%lu free=%hu lastWritten=%lu\n",
-          fd, toCopy, (unsigned long)used, freeSpace, (unsigned long)s->lastByteWritten);
+          "write: fd=%hhu wrote=%hu used=%lu free=%hu lastWritten=%lu state=%hhu\n",
+          fd, toCopy, (unsigned long)used, freeSpace, (unsigned long)s->lastByteWritten, s->state);
 
-      // Try to send as much as window allows
+      // Try to send as much as window allows (will be a no-op until ESTABLISHED)
       trySendData(fd);
 
       return toCopy;
@@ -1252,6 +1306,10 @@ implementation {
       uint32_t available;
       uint16_t toCopy;
       uint32_t startIndex;
+      uint16_t firstChunk;
+      uint16_t spaceToEnd;
+      uint16_t secondChunk;
+      uint16_t freeSpace;
 
       // Validate socket
       if (fd >= MAX_SOCKETS || !sockets[fd].inUse || sockets[fd].state != TCP_STATE_ESTABLISHED) {
@@ -1277,25 +1335,52 @@ implementation {
          return 0;
       }
 
-      // Starting index into recvBuf (0-based)
-      startIndex = s->lastByteRead;
-      if (startIndex >= RECV_BUF_SIZE) {
-         startIndex = RECV_BUF_SIZE;
-      }
-      if (startIndex + toCopy > RECV_BUF_SIZE) {
-         toCopy = (uint16_t)(RECV_BUF_SIZE - startIndex);
-      }
-      if (toCopy == 0) {
-         return 0;
+      // Starting index into recvBuf (0-based, circular)
+      startIndex = (uint32_t)(s->lastByteRead % RECV_BUF_SIZE);
+
+      // Copy may wrap; split into at most two chunks
+      spaceToEnd = (uint16_t)(RECV_BUF_SIZE - startIndex);
+      firstChunk = toCopy;
+      if (firstChunk > spaceToEnd) {
+         firstChunk = spaceToEnd;
       }
 
-      // Copy data out to application buffer
-      memcpy(buff, &s->recvBuf[startIndex], toCopy);
+      if (firstChunk > 0) {
+         memcpy(buff, &s->recvBuf[startIndex], firstChunk);
+      }
+
+      secondChunk = toCopy - firstChunk;
+      if (secondChunk > 0) {
+         memcpy(buff + firstChunk, &s->recvBuf[0], secondChunk);
+      }
+
       s->lastByteRead += toCopy;
 
       dbg("Project3TCP",
           "read: fd=%hhu read=%hu available=%lu lastByteRead=%lu\n",
           fd, toCopy, (unsigned long)available, (unsigned long)s->lastByteRead);
+
+      // After the application consumes data, our receive buffer has more free space.
+      // Recompute advertised window and, if it changed, send a pure ACK so the peer
+      // learns about the larger window and can resume sending.
+      freeSpace = computeRecvFreeSpace(fd);
+      if (freeSpace != s->advWindow) {
+         s->advWindow = freeSpace;
+         dbg("Project3TCP",
+             "read: fd=%hhu sending window update ACK ack=%lu advWindow=%u\n",
+             fd, (unsigned long)s->nextByteExpected, s->advWindow);
+         sendSegment(
+            s->remoteAddr,
+            s->localPort,
+            s->remotePort,
+            s->sndNext,             // no new data, just ACK with current seq
+            s->nextByteExpected,    // cumulative ACK
+            TCP_FLAG_ACK,
+            s->advWindow,
+            NULL,
+            0
+         );
+      }
 
       return toCopy;
    }
@@ -1324,31 +1409,15 @@ implementation {
       
       // Cast payload to TCP segment
       seg = (tcp_segment_t *)package->payload;
+
+      // Use sender-specified dataLen from TCP header
+      dataLen = seg->header.dataLen;
       
       // Derive addresses and ports
       srcAddr = package->src;   // Remote address (sender)
       dstAddr = package->dest;  // Local address (this node)
       srcPort = seg->header.srcPort;  // Remote port
       dstPort = seg->header.dstPort;  // Local port
-      
-      // Calculate data length: totalLen - header size
-      // NOTE: The pack struct doesn't store the actual received payload length.
-      // We assume the payload is fully used up to PACKET_MAX_PAYLOAD_SIZE.
-      // In a real implementation, we might want to:
-      // 1. Pass the actual length to Transport.receive() as a parameter, or
-      // 2. Track the length separately, or
-      // 3. Use a sentinel value in the data
-      // For now, we derive dataLen conservatively:
-      totalLen = PACKET_MAX_PAYLOAD_SIZE;  // Maximum possible payload size
-      dataLen = 0;
-      
-      if (totalLen >= sizeof(tcp_header_t)) {
-         dataLen = totalLen - sizeof(tcp_header_t);
-         // Clamp to TCP_MAX_DATA (the maximum data we can send in one segment)
-         if (dataLen > TCP_MAX_DATA) {
-            dataLen = TCP_MAX_DATA;
-         }
-      }
       
       // Extract remaining TCP header fields
       seq = seg->header.seq;
@@ -1384,8 +1453,9 @@ implementation {
                   newS->remotePort = srcPort;
                   
                   // Initialize handshake fields
-                  newS->iss = 100;  // Server's initial sequence number
-                  newS->sndNext = newS->iss + 1;  // SYN consumes one sequence number
+                  // Start server sequence space at 0 as well (SYN seq=0, first data seq=1)
+                  newS->iss = 0;  // Server's initial sequence number
+                  newS->sndNext = newS->iss + 1;  // Next seq after SYN
                   newS->irs = seq;  // Record client's initial sequence number
                   newS->rcvNext = seq + 1;  // Expecting next byte after SYN
                   newS->advWindow = RECV_BUF_SIZE;

@@ -4,6 +4,8 @@
 #ifndef TRANSPORT_H
 #define TRANSPORT_H
 
+#include "packet.h"
+
 // TCP flag constants
 enum {
    TCP_FLAG_SYN = 1,
@@ -24,6 +26,7 @@ typedef nx_struct tcp_header_t {
    nx_uint32_t ack;          // Next expected byte from peer
    nx_uint8_t  flags;        // SYN / ACK / FIN TCP flags
    nx_uint16_t advWindow;    // Advertised window for flow control
+   nx_uint8_t  dataLen;      // Number of payload bytes in this segment
 } tcp_header_t;
 
 // TCP segment structure (header + data)
@@ -31,6 +34,11 @@ typedef nx_struct tcp_segment_t {
    tcp_header_t header;
    nx_uint8_t   data[TCP_MAX_DATA];
 } tcp_segment_t;
+
+// TCP maximum segment size (MSS) based on packet payload and header size
+#ifndef TCP_MSS
+#define TCP_MSS (PACKET_MAX_PAYLOAD_SIZE - sizeof(tcp_header_t))
+#endif
 
 #endif /* TRANSPORT_H */
 

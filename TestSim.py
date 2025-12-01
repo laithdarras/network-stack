@@ -13,6 +13,10 @@ class TestSim:
     CMD_PING = 0
     CMD_NEIGHBOR_DUMP = 1
     CMD_ROUTE_DUMP=3
+    CMD_TEST_CLIENT = 4
+    CMD_TEST_SERVER = 5
+    CMD_KILL = 6
+    CMD_CLOSE = 7
 
     # CHANNELS - see includes/channels.h
     COMMAND_CHANNEL="command"
@@ -27,6 +31,7 @@ class TestSim:
 
     # Project 3
     TRANSPORT_CHANNEL="transport"
+    PROJECT3_TGEN_CHANNEL="Project3TGen"
 
     # Personal Debuggin Channels for some of the additional models implemented.
     HASHMAP_CHANNEL="hashmap"
@@ -125,18 +130,37 @@ class TestSim:
     def routeDMP(self, destination):
         self.sendCMD(self.CMD_ROUTE_DUMP, destination, "routing command")
 
-    # TODO: Implement tests once Transport is finished
-    def cmdTestClient():
-        # TODO: implement after connect/write/read/handshake are finished
-        pass
-    
-    def cmdTestServer():
-        # TODO: implement after listen/accept/read are finished
-        pass
+    def buildPayload(self, values):
+        payload = ""
+        for value in values:
+            payload += chr((value >> 8) & 0xFF)
+            payload += chr(value & 0xFF)
+        return payload
 
-    def cmdClose():
-        # TODO: implement after close(fd) is implemented in transport
-        pass
+    def cmdTestServer(self, address, port):
+        payload = self.buildPayload([address, port])
+        self.sendCMD(self.CMD_TEST_SERVER, address, payload)
+
+    def cmdTestClient(self, client_addr, dest_addr, src_port, dest_port, transfer):
+        payload = self.buildPayload([client_addr, dest_addr, src_port, dest_port, transfer])
+        self.sendCMD(self.CMD_TEST_CLIENT, client_addr, payload)
+
+    def cmdClose(self, client_addr, dest_addr, src_port, dest_port):
+        payload = self.buildPayload([client_addr, dest_addr, src_port, dest_port])
+        self.sendCMD(self.CMD_CLOSE, client_addr, payload)
+
+    # Convenience wrappers used by testA/testB
+    def testServer(self, address):
+        # Use default port 123 for server tests
+        self.cmdTestServer(address, 123)
+
+    def testClient(self, client_addr):
+        # Default: server at node 1, client_src_port based on client id, dest_port 123, transfer 1000
+        dest_addr = 1
+        src_port = 200 + client_addr  # simple per-client source port
+        dest_port = 123
+        transfer = 1000
+        self.cmdTestClient(client_addr, dest_addr, src_port, dest_port, transfer)
 
     def addChannel(self, channelName, out=sys.stdout):
         print("Adding Channel")
@@ -153,6 +177,7 @@ def main():
     # s.addChannel(s.GENERAL_CHANNEL) # This channel includes ALL messages
     s.addChannel(s.FLOODING_CHANNEL)  # This channel is used for flooding messages only
     s.addChannel(s.NEIGHBOR_CHANNEL)   # This channel is used for neighbor discovery messages only
+    s.addChannel(s.PROJECT3_TGEN_CHANNEL)
 
     s.runTime(20)
     s.ping(1, 2, "Hello, World")

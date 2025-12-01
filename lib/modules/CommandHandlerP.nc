@@ -19,6 +19,24 @@ module CommandHandlerP{
 }
 
 implementation{
+    uint16_t testServerAddress = 0;
+    uint16_t testServerPort = 0;
+
+    uint16_t testClientAddress = 0;
+    uint16_t testClientDest = 0;
+    uint16_t testClientSrcPort = 0;
+    uint16_t testClientDestPort = 0;
+    uint16_t testClientTransfer = 0;
+
+    uint16_t testCloseClientAddr = 0;
+    uint16_t testCloseDest = 0;
+    uint16_t testCloseSrcPort = 0;
+    uint16_t testCloseDestPort = 0;
+
+    static uint16_t readUint16(uint8_t *buff) {
+        return ((uint16_t)buff[0] << 8) | buff[1];
+    }
+
     task void processCommand(){
         if(! call Queue.empty()){
             CommandMsg *msg;
@@ -70,16 +88,27 @@ implementation{
 
             case CMD_TEST_CLIENT:
                 dbg(COMMAND_CHANNEL, "Command Type: Test_Client\n");
+                testClientAddress = readUint16(&buff[0]);
+                testClientDest = readUint16(&buff[2]);
+                testClientSrcPort = readUint16(&buff[4]);
+                testClientDestPort = readUint16(&buff[6]);
+                testClientTransfer = readUint16(&buff[8]);
                 signal CommandHandler.setTestClient();
                 break;
 
             case CMD_TEST_SERVER:
                 dbg(COMMAND_CHANNEL, "Command Type: Test_Server\n");
+                testServerAddress = readUint16(&buff[0]);
+                testServerPort = readUint16(&buff[2]);
                 signal CommandHandler.setTestServer();
                 break;
 
             case CMD_CLOSE:
                 dbg(COMMAND_CHANNEL, "Command Type: Test_Close\n");
+                testCloseClientAddr = readUint16(&buff[0]);
+                testCloseDest = readUint16(&buff[2]);
+                testCloseSrcPort = readUint16(&buff[4]);
+                testCloseDestPort = readUint16(&buff[6]);
                 signal CommandHandler.setTestClose();
                 break;
 
@@ -102,4 +131,18 @@ implementation{
         }
         return raw_msg;
     }
+
+    command uint16_t CommandHandler.getTestServerAddress() { return testServerAddress; }
+    command uint16_t CommandHandler.getTestServerPort() { return testServerPort; }
+
+    command uint16_t CommandHandler.getTestClientAddress() { return testClientAddress; }
+    command uint16_t CommandHandler.getTestClientDest() { return testClientDest; }
+    command uint16_t CommandHandler.getTestClientSrcPort() { return testClientSrcPort; }
+    command uint16_t CommandHandler.getTestClientDestPort() { return testClientDestPort; }
+    command uint16_t CommandHandler.getTestClientTransfer() { return testClientTransfer; }
+
+    command uint16_t CommandHandler.getTestCloseClientAddr() { return testCloseClientAddr; }
+    command uint16_t CommandHandler.getTestCloseDest() { return testCloseDest; }
+    command uint16_t CommandHandler.getTestCloseSrcPort() { return testCloseSrcPort; }
+    command uint16_t CommandHandler.getTestCloseDestPort() { return testCloseDestPort; }
 }

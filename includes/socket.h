@@ -8,6 +8,10 @@ enum{
     SOCKET_BUFFER_SIZE = 128,
 };
 
+#ifndef NULL_SOCKET
+#define NULL_SOCKET 0xFF
+#endif
+
 enum socket_state{
     CLOSED,
     LISTEN,
