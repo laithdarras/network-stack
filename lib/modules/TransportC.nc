@@ -10,6 +10,7 @@ implementation {
    components new SimpleSendC(AM_PACK) as TransportSend;
    components ActiveMessageC;
    components new TimerMilliC() as TestTimerC;
+   components new TimerMilliC() as RetransTimerC;
    components MainC;
    
    // Transport = TransportP.Transport;
@@ -18,6 +19,7 @@ implementation {
    TransportP.SimpleSend -> TransportSend;
    TransportP.Packet -> ActiveMessageC;
    TransportP.TestTimer -> TestTimerC;
+   TransportP.RetransTimer -> RetransTimerC;
    TransportP.Boot -> MainC.Boot;
 }
 

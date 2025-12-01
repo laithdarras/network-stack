@@ -23,6 +23,15 @@ enum {
 #define RECV_BUF_SIZE 128
 #endif
 
+// RTT / timeout tuning
+#ifndef TCP_RTT_EST
+#define TCP_RTT_EST 500  // ms, conservative fixed estimate
+#endif
+
+#ifndef TCP_TIMEOUT
+#define TCP_TIMEOUT (2 * TCP_RTT_EST)
+#endif
+
 // Max segment data size (MSS) – keep within existing packet size constraints
 // PACKET_MAX_PAYLOAD_SIZE = 20, TCP header = 15 bytes, so max TCP data = 5 bytes
 #ifndef TCP_MSS
@@ -31,6 +40,20 @@ enum {
 
 #define MAX_SOCKETS 8
 #define NULL_SOCKET 0xFF
+
+// Retransmission tracking
+typedef struct {
+   socket_t fd;
+   uint32_t seqStart;
+   uint16_t len;
+   uint32_t timeoutAt;
+   bool inUse;
+} retrans_entry_t;
+
+#define MAX_RETRANS_QUEUE 16
+
+static retrans_entry_t retransQueue[MAX_RETRANS_QUEUE];
+static bool retransTimerRunning = FALSE;
 
 // Internal socket control block (NOT the public socket_store_t)
 typedef struct {
@@ -66,6 +89,7 @@ module TransportP {
    uses interface SimpleSend;
    uses interface Packet;
    uses interface Timer<TMilli> as TestTimer;
+   uses interface Timer<TMilli> as RetransTimer;
    uses interface Boot;
 }
 
@@ -81,6 +105,11 @@ implementation {
    static error_t sendSegment(uint16_t dstAddr, uint16_t srcPort, uint16_t dstPort, 
                              uint32_t seq, uint32_t ack, uint8_t flags, 
                              uint16_t advWindow, uint8_t *data, uint8_t dataLen);
+   static void scheduleRetransTimer();
+   static void enqueueRetrans(socket_t fd, uint32_t seqStart, uint16_t len, uint32_t now);
+   static void initRetransQueue();
+   static void cleanupAckedRetrans(socket_t fd, uint32_t lastByteAcked);
+   static void clearRetransEntriesForSocket(socket_t fd);
    
    /**
     * Allocate a new socket from the socket table
@@ -207,13 +236,14 @@ implementation {
       s->iss = 1;
       s->sndNext = s->iss + 1;  // SYN consumes one sequence number
       
-      // Initialize receive sequence numbers
+      // Initialize receive sequence numbers and advertised window
       s->irs = 0;
       s->rcvNext = 0;
+      s->advWindow = RECV_BUF_SIZE;
       
       // Send SYN segment
       if (sendSegment(remoteAddr, localPort, remotePort, 
-                      s->iss, 0, TCP_FLAG_SYN, 0, NULL, 0) == SUCCESS) {
+                      s->iss, 0, TCP_FLAG_SYN, s->advWindow, NULL, 0) == SUCCESS) {
          dbg("Project3TCP", "Client: SYN sent (fd=%hhu, iss=%lu)\n", fd, s->iss);
          return SUCCESS;
       }
@@ -242,6 +272,112 @@ implementation {
          return 0;
       }
       return (uint16_t)(RECV_BUF_SIZE - used);
+   }
+
+   /**
+    * Initialize retransmission queue
+    */
+   static void initRetransQueue() {
+      uint8_t i;
+      for (i = 0; i < MAX_RETRANS_QUEUE; i++) {
+         retransQueue[i].inUse = FALSE;
+      }
+      retransTimerRunning = FALSE;
+   }
+
+   /**
+    * Helper to find earliest timeout and schedule timer
+    */
+   static void scheduleRetransTimer() {
+      uint8_t i;
+      bool found;
+      uint32_t minTimeout;
+      uint32_t now;
+      uint32_t delta;
+
+      found = FALSE;
+      minTimeout = 0;
+      for (i = 0; i < MAX_RETRANS_QUEUE; i++) {
+         if (retransQueue[i].inUse) {
+            if (!found || retransQueue[i].timeoutAt < minTimeout) {
+               minTimeout = retransQueue[i].timeoutAt;
+               found = TRUE;
+            }
+         }
+      }
+
+      if (!found) {
+         if (retransTimerRunning) {
+            call RetransTimer.stop();
+            retransTimerRunning = FALSE;
+         }
+         return;
+      }
+
+      now = call RetransTimer.getNow();
+      if (minTimeout <= now) {
+         delta = 1;
+      } else {
+         delta = minTimeout - now;
+         if (delta == 0) {
+            delta = 1;
+         }
+      }
+
+      call RetransTimer.startOneShot(delta);
+      retransTimerRunning = TRUE;
+   }
+
+   /**
+    * Enqueue a retransmission entry
+    */
+   static void enqueueRetrans(socket_t fd, uint32_t seqStart, uint16_t len, uint32_t now) {
+      uint8_t i;
+      for (i = 0; i < MAX_RETRANS_QUEUE; i++) {
+         if (!retransQueue[i].inUse) {
+            retransQueue[i].fd = fd;
+            retransQueue[i].seqStart = seqStart;
+            retransQueue[i].len = len;
+            retransQueue[i].timeoutAt = now + TCP_TIMEOUT;
+            retransQueue[i].inUse = TRUE;
+            scheduleRetransTimer();
+            return;
+         }
+      }
+
+      dbg("Project3TCP", "Retrans queue full, dropping seqStart=%lu len=%hu\n",
+          (unsigned long)seqStart, len);
+   }
+
+   /**
+    * Cleanup retrans entries fully acknowledged
+    */
+   static void cleanupAckedRetrans(socket_t fd, uint32_t lastByteAcked) {
+      uint8_t i;
+      uint32_t seqEnd;
+
+      for (i = 0; i < MAX_RETRANS_QUEUE; i++) {
+         if (retransQueue[i].inUse && retransQueue[i].fd == fd) {
+            seqEnd = retransQueue[i].seqStart + retransQueue[i].len - 1;
+            if (seqEnd <= lastByteAcked) {
+               retransQueue[i].inUse = FALSE;
+            }
+         }
+      }
+
+      scheduleRetransTimer();
+   }
+
+   /**
+    * Clear retrans entries for socket (used when retransmitting Go-Back-N)
+    */
+   static void clearRetransEntriesForSocket(socket_t fd) {
+      uint8_t i;
+      for (i = 0; i < MAX_RETRANS_QUEUE; i++) {
+         if (retransQueue[i].inUse && retransQueue[i].fd == fd) {
+            retransQueue[i].inUse = FALSE;
+         }
+      }
    }
    
    /**
@@ -324,6 +460,12 @@ implementation {
             s->lastByteSent += dataLen;
             inFlight = s->lastByteSent - s->lastByteAcked;
             s->sndNext = s->lastByteSent + 1;
+
+            // Track segment for possible retransmission
+            {
+               uint32_t now = call RetransTimer.getNow();
+               enqueueRetrans(fd, seqNum, dataLen, now);
+            }
             
             dbg("Project3TCP", "trySendData: sent segment seq=%lu dataLen=%hu inFlight=%lu effectiveWindow=%hu\n",
                 seqNum, dataLen, inFlight, effectiveWindow);
@@ -415,6 +557,9 @@ implementation {
                // Also update remoteAdvWindow from header
                s->remoteAdvWindow = seg->header.advWindow;
                
+               // Remove fully ACKed retransmission entries
+               cleanupAckedRetrans(fd, s->lastByteAcked);
+
                // Try to send more data now that window space may have opened
                trySendData(fd);
             }
@@ -682,6 +827,7 @@ implementation {
                   newS->sndNext = newS->iss + 1;  // SYN consumes one sequence number
                   newS->irs = seq;  // Record client's initial sequence number
                   newS->rcvNext = seq + 1;  // Expecting next byte after SYN
+                  newS->advWindow = RECV_BUF_SIZE;
                   
                   // Set state to SYN_RCVD
                   newS->state = TCP_STATE_SYN_RCVD;
@@ -689,7 +835,7 @@ implementation {
                   // Send SYN+ACK
                   if (sendSegment(srcAddr, dstPort, srcPort,
                                   newS->iss, newS->rcvNext, 
-                                  TCP_FLAG_SYN | TCP_FLAG_ACK, 0, NULL, 0) == SUCCESS) {
+                                  TCP_FLAG_SYN | TCP_FLAG_ACK, newS->advWindow, NULL, 0) == SUCCESS) {
                      dbg("Project3TCP", "SYN received, SYN+ACK sent, newFd=%hhu\n", newFd);
                   } else {
                      // Failed to send SYN+ACK, free the socket
@@ -727,7 +873,79 @@ implementation {
    // Testing TCP infra
    event void Boot.booted() {
       dbg("Project 3 - TCP", "Transport booted\n");
+      initRetransQueue();
       call TestTimer.startOneShot(10000);  // 10 seconds to let routing converge
+   }
+
+   event void RetransTimer.fired() {
+      uint8_t i;
+      bool found;
+      uint8_t earliestIdx;
+      uint32_t now;
+      retrans_entry_t *entry;
+      socket_cb_t *s;
+      uint32_t seqEnd;
+
+      now = call RetransTimer.getNow();
+      found = FALSE;
+      earliestIdx = 0;
+
+      for (i = 0; i < MAX_RETRANS_QUEUE; i++) {
+         if (retransQueue[i].inUse) {
+            if (!found || retransQueue[i].timeoutAt < retransQueue[earliestIdx].timeoutAt) {
+               earliestIdx = i;
+               found = TRUE;
+            }
+         }
+      }
+
+      if (!found) {
+         retransTimerRunning = FALSE;
+         return;
+      }
+
+      entry = &retransQueue[earliestIdx];
+
+      if (entry->timeoutAt > now) {
+          scheduleRetransTimer();
+          return;
+      }
+
+      if (entry->fd >= MAX_SOCKETS) {
+         entry->inUse = FALSE;
+         scheduleRetransTimer();
+         return;
+      }
+
+      s = &sockets[entry->fd];
+
+      if (!s->inUse || s->state != TCP_STATE_ESTABLISHED) {
+         entry->inUse = FALSE;
+         scheduleRetransTimer();
+         return;
+      }
+
+      seqEnd = entry->seqStart + entry->len - 1;
+      if (seqEnd <= s->lastByteAcked) {
+         entry->inUse = FALSE;
+         scheduleRetransTimer();
+         return;
+      }
+
+      dbg("Project3TCP", "Timeout on fd=%hhu seqStart=%lu, retransmitting unACKed data\n",
+          entry->fd, (unsigned long)entry->seqStart);
+
+      // Go-Back-N: reset send pointer to last ACKed byte
+      s->lastByteSent = s->lastByteAcked;
+      s->sndNext = s->lastByteSent + 1;
+
+      // Clear all outstanding retrans entries for this socket
+      clearRetransEntriesForSocket(entry->fd);
+
+      // Resend all unACKed data
+      trySendData(entry->fd);
+
+      scheduleRetransTimer();
    }
    
    event void TestTimer.fired() {
