@@ -63,6 +63,11 @@ typedef struct {
    uint16_t localPort;
    uint16_t remoteAddr;
    uint16_t remotePort;
+
+   // Server / accept tracking
+   bool isServer;           // TRUE if this is the server side of a connection
+   bool pendingAccept;      // TRUE until this connection is returned by accept()
+
    // Handshake sequence numbers
    uint32_t iss;            // Initial send sequence number
    uint32_t irs;            // Initial receive sequence number from peer
@@ -126,6 +131,8 @@ implementation {
             sockets[i].localPort = 0;
             sockets[i].remoteAddr = 0;
             sockets[i].remotePort = 0;
+            sockets[i].isServer = FALSE;
+            sockets[i].pendingAccept = FALSE;
             sockets[i].iss = 0;
             sockets[i].irs = 0;
             sockets[i].sndNext = 0;
@@ -705,28 +712,150 @@ implementation {
 
    
    command socket_t Transport.socket() {
-      // Allocate a new socket
-      return 0;
+      socket_t fd;
+      socket_cb_t *s;
+
+      fd = allocSocket();
+      if (fd == NULL_SOCKET) {
+         return NULL_SOCKET;
+      }
+
+      s = &sockets[fd];
+      s->state = TCP_STATE_CLOSED;
+      s->localAddr = TOS_NODE_ID;
+      s->localPort = 0;
+      s->remoteAddr = 0;
+      s->remotePort = 0;
+      s->isServer = FALSE;
+      s->pendingAccept = FALSE;
+
+      dbg("Project3TCP", "socket(): allocated fd=%hhu\n", fd);
+      return fd;
    }
 
    command error_t Transport.bind(socket_t fd, socket_addr_t *addr) {
-      // Bind socket to address
-      return FAIL;
+      socket_cb_t *s;
+      uint8_t i;
+
+      if (fd >= MAX_SOCKETS || !sockets[fd].inUse) {
+         return FAIL;
+      }
+
+      s = &sockets[fd];
+      if (s->state != TCP_STATE_CLOSED) {
+         return FAIL;
+      }
+
+      s->localAddr = addr->addr;
+      s->localPort = addr->port;
+
+      // Ensure no other socket uses the same (localAddr, localPort)
+      for (i = 0; i < MAX_SOCKETS; i++) {
+         if (i == fd) {
+            continue;
+         }
+         if (sockets[i].inUse &&
+             sockets[i].localAddr == s->localAddr &&
+             sockets[i].localPort == s->localPort) {
+            return FAIL;
+         }
+      }
+
+      dbg("Project3TCP", "bind(): fd=%hhu addr=%hu port=%hu\n",
+          fd, s->localAddr, s->localPort);
+      return SUCCESS;
    }
 
    command error_t Transport.connect(socket_t fd, socket_addr_t *addr) {
-      // Initiate connection
-      return FAIL;
+      socket_cb_t *s;
+
+      if (fd >= MAX_SOCKETS || !sockets[fd].inUse) {
+         return FAIL;
+      }
+
+      s = &sockets[fd];
+      if (s->state != TCP_STATE_CLOSED) {
+         return FAIL;
+      }
+      if (s->localPort == 0) {
+         // Must be bound before connect
+         return FAIL;
+      }
+
+      s->remoteAddr = addr->addr;
+      s->remotePort = addr->port;
+
+      if (startClientHandshake(fd, s->remoteAddr, s->remotePort, s->localPort) != SUCCESS) {
+         return FAIL;
+      }
+
+      dbg("Project3TCP", "connect(): fd=%hhu to %hu:%hu\n",
+          fd, s->remoteAddr, s->remotePort);
+      return SUCCESS;
    }
 
    command error_t Transport.listen(socket_t fd) {
-      // Set socket to listen state
-      return FAIL;
+      socket_cb_t *s;
+
+      if (fd >= MAX_SOCKETS || !sockets[fd].inUse) {
+         return FAIL;
+      }
+
+      s = &sockets[fd];
+      if (s->state != TCP_STATE_CLOSED) {
+         return FAIL;
+      }
+      if (s->localPort == 0) {
+         // Must be bound to a port
+         return FAIL;
+      }
+
+      s->state = TCP_STATE_LISTEN;
+      dbg("Project3TCP", "listen(): fd=%hhu on port=%hu\n", fd, s->localPort);
+      return SUCCESS;
    }
 
    command socket_t Transport.accept(socket_t fd) {
-      // Accept incoming connection
-      return 0;
+      socket_cb_t *ls;
+      uint16_t listenPort;
+      uint8_t i;
+      socket_cb_t *s;
+
+      if (fd >= MAX_SOCKETS || !sockets[fd].inUse) {
+         return NULL_SOCKET;
+      }
+
+      ls = &sockets[fd];
+      if (ls->state != TCP_STATE_LISTEN) {
+         return NULL_SOCKET;
+      }
+
+      listenPort = ls->localPort;
+
+      for (i = 0; i < MAX_SOCKETS; i++) {
+         s = &sockets[i];
+         if (!s->inUse) {
+            continue;
+         }
+         if (!s->isServer) {
+            continue;
+         }
+         if (!s->pendingAccept) {
+            continue;
+         }
+         if (s->state != TCP_STATE_ESTABLISHED) {
+            continue;
+         }
+         if (s->localPort != listenPort) {
+            continue;
+         }
+
+         s->pendingAccept = FALSE;
+         dbg("Project3TCP", "accept(): listenFd=%hhu returning newFd=%hhu\n", fd, i);
+         return (socket_t)i;
+      }
+
+      return NULL_SOCKET;
    }
 
    command uint16_t Transport.write(socket_t fd, uint8_t *buff, uint16_t bufflen) {
@@ -930,6 +1059,8 @@ implementation {
                   newS->irs = seq;  // Record client's initial sequence number
                   newS->rcvNext = seq + 1;  // Expecting next byte after SYN
                   newS->advWindow = RECV_BUF_SIZE;
+                  newS->isServer = TRUE;
+                  newS->pendingAccept = TRUE;
                   
                   // Set state to SYN_RCVD
                   newS->state = TCP_STATE_SYN_RCVD;
@@ -962,8 +1093,20 @@ implementation {
    }
 
    command error_t Transport.close(socket_t fd) {
-      // Close connection
-      return FAIL;
+      if (fd >= MAX_SOCKETS || !sockets[fd].inUse) {
+         return FAIL;
+      }
+
+      dbg("Project3TCP", "close(): fd=%hhu state=%hhu local=%hu:%hu remote=%hu:%hu\n",
+          fd,
+          sockets[fd].state,
+          sockets[fd].localAddr,
+          sockets[fd].localPort,
+          sockets[fd].remoteAddr,
+          sockets[fd].remotePort);
+
+      freeSocket(fd);
+      return SUCCESS;
    }
 
    command error_t Transport.release(socket_t fd) {
