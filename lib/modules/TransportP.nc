@@ -282,7 +282,7 @@ implementation {
       // Send SYN segment
       if (sendSegment(remoteAddr, localPort, remotePort, 
                       s->iss, 0, TCP_FLAG_SYN, s->advWindow, NULL, 0) == SUCCESS) {
-         dbg("Project3TCP", "Client: SYN sent (fd=%hhu, iss=%lu)\n", fd, s->iss);
+         dbg(TRANSPORT_CHANNEL, "Client: SYN sent (fd=%hhu, iss=%lu)\n", fd, s->iss);
          return SUCCESS;
       }
       
@@ -649,6 +649,8 @@ implementation {
             // Client waiting for SYN+ACK
             if ((flags & TCP_FLAG_SYN) && (flags & TCP_FLAG_ACK)) {
                // Validate ACK acknowledges our SYN
+               dbg(TRANSPORT_CHANNEL, "SYN_SENT: received SYN+ACK ack=%lu expected=%lu (fd=%hhu)\n",
+                   seg->header.ack, s->sndNext, fd);
                if (seg->header.ack == s->sndNext) {
                   // Record peer's initial sequence number
                   s->irs = seg->header.seq;
@@ -670,13 +672,13 @@ implementation {
                      if (s->ssthresh < 2 * TCP_MSS) {
                         s->ssthresh = 4 * TCP_MSS;
                      }
-                     dbg("Project3TCP", "Client: connection ESTABLISHED (fd=%hhu)\n", fd);
+                     dbg(TRANSPORT_CHANNEL, "Client: connection ESTABLISHED (fd=%hhu)\n", fd);
                      // If any application data was queued before connect completed, send it now
                      trySendData(fd);
                   }
                } else {
-                  dbg("Project3TCP", "Client: invalid ACK in SYN+ACK (expected %lu, got %lu)\n", 
-                      s->sndNext, seg->header.ack);
+                  dbg(TRANSPORT_CHANNEL, "Client: invalid ACK in SYN+ACK (expected %lu, got %lu, fd=%hhu)\n", 
+                      s->sndNext, seg->header.ack, fd);
                }
             }
             // Ignore other segments in SYN_SENT state
@@ -684,6 +686,8 @@ implementation {
             
          case TCP_STATE_SYN_RCVD:
             // Server waiting for final ACK
+            dbg(TRANSPORT_CHANNEL, "SYN_RCVD: received segment flags=%hhu ack=%lu expected_ack=%lu seq=%lu expected_seq=%lu (fd=%hhu)\n",
+                flags, seg->header.ack, s->sndNext, seg->header.seq, s->rcvNext, fd);
             if ((flags & TCP_FLAG_ACK) && !(flags & TCP_FLAG_SYN)) {
                // Validate ACK acknowledges our SYN and sequence matches
                if (seg->header.ack == s->sndNext && seg->header.seq == s->rcvNext) {
@@ -700,12 +704,13 @@ implementation {
                   if (s->ssthresh < 2 * TCP_MSS) {
                      s->ssthresh = 4 * TCP_MSS;
                   }
-                  dbg("Project3TCP", "Server: connection ESTABLISHED (fd=%hhu)\n", fd);
+                  dbg(TRANSPORT_CHANNEL, "Server: connection ESTABLISHED (fd=%hhu, pendingAccept=%u, remote=%hu:%hu)\n", 
+                      fd, s->pendingAccept, s->remoteAddr, s->remotePort);
                   // If any application data was queued before connect completed, send it now
                   trySendData(fd);
                } else {
-                  dbg("Project3TCP", "Server: invalid ACK (ack=%lu expected %lu, seq=%lu expected %lu)\n",
-                      seg->header.ack, s->sndNext, seg->header.seq, s->rcvNext);
+                  dbg(TRANSPORT_CHANNEL, "Server: invalid ACK (ack=%lu expected %lu, seq=%lu expected %lu, fd=%hhu)\n",
+                      seg->header.ack, s->sndNext, seg->header.seq, s->rcvNext, fd);
                }
             }
             // Ignore other segments in SYN_RCVD state
@@ -818,12 +823,12 @@ implementation {
                   s->nextByteExpected += dataLen;
                } else if (seqNum < expected) {
                   // Duplicate or already received; ignore payload
-                  dbg("Project3TCP", "EST: duplicate data seq=%lu expected=%lu\n",
-                      (unsigned long)seqNum, (unsigned long)expected);
+                  dbg(TRANSPORT_CHANNEL, "EST: duplicate data seq=%lu expected=%lu (fd=%hhu)\n",
+                      (unsigned long)seqNum, (unsigned long)expected, fd);
                } else { // seqNum > expected
                   // Out-of-order ahead; Go-Back-N receiver drops payload
-                  dbg("Project3TCP", "EST: out-of-order seq=%lu expected=%lu (drop)\n",
-                      (unsigned long)seqNum, (unsigned long)expected);
+                  dbg(TRANSPORT_CHANNEL, "EST: out-of-order seq=%lu expected=%lu (drop, fd=%hhu)\n",
+                      (unsigned long)seqNum, (unsigned long)expected, fd);
                }
                
                // After any data, we always send a cumulative ACK
@@ -832,9 +837,9 @@ implementation {
                freeSpace = computeRecvFreeSpace(fd);
                s->advWindow = freeSpace;
                
-               dbg("Project3TCP",
-                   "EST: sending ACK ack=%lu advWindow=%u\n",
-                   (unsigned long)ackToSend, freeSpace);
+               dbg(TRANSPORT_CHANNEL,
+                   "EST: sending ACK ack=%lu advWindow=%u (fd=%hhu)\n",
+                   (unsigned long)ackToSend, freeSpace, fd);
                
                // We don't advance sndNext here since this is a pure ACK.
                sendSegment(
@@ -1248,7 +1253,7 @@ implementation {
          return FAIL;
       }
 
-      dbg("Project3TCP", "connect(): fd=%hhu to %hu:%hu\n",
+      dbg(TRANSPORT_CHANNEL, "connect(): fd=%hhu to %hu:%hu\n",
           fd, s->remoteAddr, s->remotePort);
       return SUCCESS;
    }
@@ -1310,7 +1315,7 @@ implementation {
          }
 
          s->pendingAccept = FALSE;
-         dbg("Project3TCP", "accept(): listenFd=%hhu returning newFd=%hhu\n", fd, i);
+         dbg(TRANSPORT_CHANNEL, "accept(): listenFd=%hhu returning newFd=%hhu\n", fd, i);
          return (socket_t)i;
       }
 
@@ -1403,6 +1408,7 @@ implementation {
       uint16_t spaceToEnd;
       uint16_t secondChunk;
       uint16_t freeSpace;
+      uint32_t nextSeqToRead;
 
       // Validate socket
       if (fd >= MAX_SOCKETS || !sockets[fd].inUse || sockets[fd].state != TCP_STATE_ESTABLISHED) {
@@ -1412,10 +1418,30 @@ implementation {
       s = &sockets[fd];
 
       // In-order bytes available between lastByteRead+1 and nextByteExpected-1
+      // Since we use a circular buffer, available can never exceed RECV_BUF_SIZE
       available = 0;
-      if (s->nextByteExpected > 0) {
-         available = (s->nextByteExpected - 1) - s->lastByteRead;
+      if (s->nextByteExpected > s->lastByteRead) {
+         available = s->nextByteExpected - s->lastByteRead - 1;
       }
+      
+      // Clamp available to buffer size (circular buffer can only hold RECV_BUF_SIZE bytes)
+      // When buffer wraps, we can only read the most recent RECV_BUF_SIZE bytes
+      if (available > RECV_BUF_SIZE) {
+         // Reset lastByteRead to start of current valid window
+         // This ensures we only read the most recent data that's actually in the buffer
+         if (s->nextByteExpected > RECV_BUF_SIZE) {
+            s->lastByteRead = s->nextByteExpected - RECV_BUF_SIZE - 1;
+         } else {
+            s->lastByteRead = 0;
+         }
+         // Recompute available (now limited to what's actually in buffer)
+         available = s->nextByteExpected - s->lastByteRead - 1;
+         // Final clamp
+         if (available > RECV_BUF_SIZE) {
+            available = RECV_BUF_SIZE;
+         }
+      }
+      
       if (available == 0) {
          return 0;
       }
@@ -1433,7 +1459,12 @@ implementation {
       }
 
       // Starting index into recvBuf (0-based, circular)
-      startIndex = (uint32_t)(s->lastByteRead % RECV_BUF_SIZE);
+      // The next byte to read is at sequence number (lastByteRead + 1)
+      // We store sequence number N at buffer index (N - 1) % RECV_BUF_SIZE
+      // Compute the buffer index for the next sequence to read
+      nextSeqToRead = s->lastByteRead + 1;
+      // Use modulo to get the correct buffer position (handles wrap-around)
+      startIndex = (nextSeqToRead - 1) % RECV_BUF_SIZE;
 
       // Copy may wrap; split into at most two chunks
       spaceToEnd = (uint16_t)(RECV_BUF_SIZE - startIndex);
@@ -1527,11 +1558,13 @@ implementation {
       
       if (fd != NULL_SOCKET) {
          // Socket found - log and handle segment
-         dbg("Project 3 - TCP", "RX TCP for socket %hhu state=%hhu (local %hu:%hu, remote %hu:%hu)\n", 
-             fd, sockets[fd].state, dstAddr, dstPort, srcAddr, srcPort);
+         dbg(TRANSPORT_CHANNEL, "RX TCP for socket %hhu state=%hhu (local %hu:%hu, remote %hu:%hu) seq=%lu dataLen=%hhu\n", 
+             fd, sockets[fd].state, dstAddr, dstPort, srcAddr, srcPort, (unsigned long)seq, dataLen);
          handleSegmentForSocket(fd, seg, dataLen);
       } else {
          // No matching socket found - check if this is a SYN for a new connection
+         dbg(TRANSPORT_CHANNEL, "RX TCP with no matching socket (local %hu:%hu, remote %hu:%hu) flags=%hhu\n",
+             dstAddr, dstPort, srcAddr, srcPort, flags);
          if (flags & TCP_FLAG_SYN) {
             // Look for a listening socket on the destination port
             socket_t listenFd = findListeningSocketByPort(dstPort);
@@ -1566,14 +1599,15 @@ implementation {
                   if (sendSegment(srcAddr, dstPort, srcPort,
                                   newS->iss, newS->rcvNext, 
                                   TCP_FLAG_SYN | TCP_FLAG_ACK, newS->advWindow, NULL, 0) == SUCCESS) {
-                     dbg("Project3TCP", "SYN received, SYN+ACK sent, newFd=%hhu\n", newFd);
+                     dbg(TRANSPORT_CHANNEL, "SYN received from %hu:%hu, SYN+ACK sent, newFd=%hhu (pendingAccept=TRUE)\n", 
+                         srcAddr, srcPort, newFd);
                   } else {
                      // Failed to send SYN+ACK, free the socket
                      freeSocket(newFd);
                      dbg("Project3TCP", "Failed to send SYN+ACK, freeing socket %hhu\n", newFd);
                   }
                } else {
-                  dbg("Project3TCP", "No free socket available for new connection\n");
+                  dbg(TRANSPORT_CHANNEL, "No free socket available for new connection\n");
                }
             } else {
                // No listening socket on this port

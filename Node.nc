@@ -251,15 +251,21 @@ implementation {
    event void ServerTimer.fired() {
       socket_t newFd;
       uint8_t i;
+      bool stored;
 
       if (serverFd == NULL_SOCKET) {
          call ServerTimer.stop();
          return;
       }
 
-      newFd = call Transport.accept(serverFd);
-      if (newFd != NULL_SOCKET) {
-         bool stored = FALSE;
+      // Accept all pending connections (accept() returns one per call)
+      while (TRUE) {
+         newFd = call Transport.accept(serverFd);
+         if (newFd == NULL_SOCKET) {
+            break;  // No more pending connections
+         }
+         
+         stored = FALSE;
          for (i = 0; i < MAX_SERVER_CONNECTIONS; i++) {
             if (serverAccepted[i] == NULL_SOCKET) {
                serverAccepted[i] = newFd;
@@ -271,6 +277,7 @@ implementation {
          if (!stored) {
             dbg("Project3TGen", "accept(): connection limit reached on node %hu\n", TOS_NODE_ID);
             call Transport.close(newFd);
+            break;  // Don't try to accept more if we're at the limit
          }
       }
 
@@ -283,7 +290,7 @@ implementation {
                uint16_t n = call Transport.read(fd, serverReadBuf, sizeof(serverReadBuf));
                if (n > 1) {
                   uint16_t idx = 0;
-                  dbg("Project3TGen", "Reading Data:");
+                  dbg("Project3TGen", "Reading Data (fd=%hhu):", fd);
                   while (idx + 1 < n) {
                      uint16_t value =
                         ((uint16_t)serverReadBuf[idx] << 8) |
@@ -293,6 +300,9 @@ implementation {
                   }
                   dbg("Project3TGen", "\n");
                }
+               // Clean up closed connections (read returns 0 and socket is no longer ESTABLISHED)
+               // Note: Transport.read already validates state, so if it returns 0 consistently,
+               // the connection may be closing. We'll rely on the transport layer to handle cleanup.
             }
       }
    }

@@ -1,0 +1,427 @@
+Creating Topo!
+Number of Motes 23
+ 1   2   -54.0
+ 1   7   -54.0
+ 1   15   -54.0
+ 2   1   -54.0
+ 2   3   -54.0
+ 2   8   -54.0
+ 3   2   -54.0
+ 3   4   -54.0
+ 3   17   -54.0
+ 3   18   -54.0
+ 4   3   -54.0
+ 4   5   -54.0
+ 4   10   -54.0
+ 4   12   -54.0
+ 5   4   -54.0
+ 5   6   -54.0
+ 5   19   -54.0
+ 5   20   -54.0
+ 6   5   -54.0
+ 6   14   -54.0
+ 6   21   -54.0
+ 7   1   -54.0
+ 7   8   -54.0
+ 8   2   -54.0
+ 8   7   -54.0
+ 8   9   -54.0
+ 9   8   -54.0
+ 9   10   -54.0
+ 10   4   -54.0
+ 10   9   -54.0
+ 10   11   -54.0
+ 11   10   -54.0
+ 11   12   -54.0
+ 12   4   -54.0
+ 12   11   -54.0
+ 12   13   -54.0
+ 13   12   -54.0
+ 13   14   -54.0
+ 14   6   -54.0
+ 14   13   -54.0
+ 15   1   -54.0
+ 15   16   -54.0
+ 16   15   -54.0
+ 16   17   -54.0
+ 17   3   -54.0
+ 17   16   -54.0
+ 17   18   -54.0
+ 18   3   -54.0
+ 18   17   -54.0
+ 18   22   -54.0
+ 19   5   -54.0
+ 19   20   -54.0
+ 19   23   -54.0
+ 20   5   -54.0
+ 20   19   -54.0
+ 20   21   -54.0
+ 21   6   -54.0
+ 21   20   -54.0
+ 22   18   -54.0
+ 22   23   -54.0
+ 23   22   -54.0
+ 23   19   -54.0
+Creating noise model for  1
+Creating noise model for  2
+Creating noise model for  7
+Creating noise model for  15
+Creating noise model for  3
+Creating noise model for  8
+Creating noise model for  4
+Creating noise model for  17
+Creating noise model for  18
+Creating noise model for  5
+Creating noise model for  10
+Creating noise model for  12
+Creating noise model for  6
+Creating noise model for  19
+Creating noise model for  20
+Creating noise model for  14
+Creating noise model for  21
+Creating noise model for  9
+Creating noise model for  11
+Creating noise model for  13
+Creating noise model for  16
+Creating noise model for  22
+Creating noise model for  23
+Adding Channel
+Adding Channel
+Adding Channel
+Adding Channel
+0:0:9.826202534 DEBUG (2): RX TCP with no matching socket (local 2:5678, remote 1:1234) flags=1
+0:0:9.886918188 DEBUG (2): RX TCP with no matching socket (local 2:5678, remote 8:1234) flags=1
+0:0:10.028610545 DEBUG (2): RX TCP with no matching socket (local 2:5678, remote 3:1234) flags=1
+0:0:10.034591955 DEBUG (2): RX TCP with no matching socket (local 2:5678, remote 17:1234) flags=1
+0:0:10.054856403 DEBUG (2): RX TCP with no matching socket (local 2:5678, remote 9:1234) flags=1
+0:0:10.205490484 DEBUG (2): RX TCP with no matching socket (local 2:5678, remote 18:1234) flags=1
+0:0:10.212402437 DEBUG (2): RX TCP with no matching socket (local 2:5678, remote 16:1234) flags=1
+0:0:10.261291863 DEBUG (2): RX TCP with no matching socket (local 2:5678, remote 4:1234) flags=1
+0:0:10.311569616 DEBUG (2): RX TCP with no matching socket (local 2:5678, remote 12:1234) flags=1
+0:0:10.345962925 DEBUG (2): RX TCP with no matching socket (local 2:5678, remote 11:1234) flags=1
+0:0:10.384353747 DEBUG (2): RX TCP with no matching socket (local 2:5678, remote 7:1234) flags=1
+0:0:10.402939225 DEBUG (2): RX TCP with no matching socket (local 2:5678, remote 5:1234) flags=1
+0:0:10.475601315 DEBUG (2): RX TCP with no matching socket (local 2:5678, remote 15:1234) flags=1
+0:0:10.569855090 DEBUG (2): RX TCP with no matching socket (local 2:5678, remote 10:1234) flags=1
+0:0:11.064957042 DEBUG (2): RX TCP with no matching socket (local 2:5678, remote 13:1234) flags=1
+0:0:11.294235596 DEBUG (2): RX TCP with no matching socket (local 2:5678, remote 14:1234) flags=1
+0:1:40.625000943 DEBUG (1): Command Type: Test_Server
+0:1:40.625000943 DEBUG (1): Server started node=1 port=123
+0:1:59.974612338 DEBUG (4): Command Type: Test_Client
+0:1:59.974612338 DEBUG (4): Client: SYN sent (fd=0, iss=0)
+0:1:59.974612338 DEBUG (4): connect(): fd=0 to 1:123
+0:1:59.974612338 DEBUG (4): Client started node=4 -> 1:123 transfer=1000
+0:2:0.462891168 DEBUG (4): Client wrote 64 bytes from node 4
+0:2:0.520263937 DEBUG (1): RX TCP with no matching socket (local 1:123, remote 4:204) flags=1
+0:2:0.520263937 DEBUG (1): SYN received from 4:204, SYN+ACK sent, newFd=1 (pendingAccept=TRUE)
+0:2:0.668472684 DEBUG (4): RX TCP for socket 0 state=2 (local 4:204, remote 1:123) seq=0 dataLen=0
+0:2:0.668472684 DEBUG (4): SYN_SENT: received SYN+ACK ack=1 expected=1 (fd=0)
+0:2:0.668472684 DEBUG (4): Client: connection ESTABLISHED (fd=0)
+0:2:0.668472684 DEBUG (4): trySendData: entered (fd=0, lastByteWritten=64, lastByteSent=0, lastByteAcked=0)
+0:2:0.668472684 DEBUG (4): CC: trySendData fd=0 cwnd=4 effWin=4 inFlight=0
+0:2:0.668472684 DEBUG (4): trySendData: sent segment seq=1 dataLen=4 inFlight=4 effectiveWindow=4
+0:2:0.668472684 DEBUG (4): trySendData: exited (fd=0, lastByteSent=4, inFlight=4)
+0:2:0.926208717 DEBUG (1): RX TCP for socket 1 state=3 (local 1:123, remote 4:204) seq=1 dataLen=0
+0:2:0.926208717 DEBUG (1): SYN_RCVD: received segment flags=2 ack=1 expected_ack=1 seq=1 expected_seq=1 (fd=1)
+0:2:0.926208717 DEBUG (1): Server: connection ESTABLISHED (fd=1, pendingAccept=1, remote=4:204)
+0:2:0.926208717 DEBUG (1): trySendData: entered (fd=1, lastByteWritten=0, lastByteSent=0, lastByteAcked=0)
+0:2:0.926208717 DEBUG (1): CC: trySendData fd=1 cwnd=4 effWin=0 inFlight=0
+0:2:0.926208717 DEBUG (1): trySendData: exited (fd=1, lastByteSent=0, inFlight=0)
+0:2:0.951172418 DEBUG (4): trySendData: entered (fd=0, lastByteWritten=128, lastByteSent=4, lastByteAcked=0)
+0:2:0.951172418 DEBUG (4): CC: trySendData fd=0 cwnd=4 effWin=4 inFlight=4
+0:2:0.951172418 DEBUG (4): trySendData: exited (fd=0, lastByteSent=4, inFlight=4)
+0:2:0.951172418 DEBUG (4): Client wrote 64 bytes from node 4
+0:2:1.132812643 DEBUG (1): accept(): listenFd=0 returning newFd=1
+0:2:1.132812643 DEBUG (1): accept(): node=1 accepted fd=1
+0:2:1.448547608 DEBUG (1): RX TCP for socket 1 state=4 (local 1:123, remote 4:204) seq=1 dataLen=4
+0:2:1.448547608 DEBUG (1): trySendData: entered (fd=1, lastByteWritten=0, lastByteSent=0, lastByteAcked=0)
+0:2:1.448547608 DEBUG (1): CC: trySendData fd=1 cwnd=4 effWin=4 inFlight=0
+0:2:1.448547608 DEBUG (1): trySendData: exited (fd=1, lastByteSent=0, inFlight=0)
+0:2:1.448547608 DEBUG (1): EST: sending ACK ack=5 advWindow=124 (fd=1)
+0:2:1.621093893 DEBUG (1): Reading Data (fd=1):0:2:1.621093893 DEBUG (1): 0,0:2:1.621093893 DEBUG (1): 1,0:2:1.621093893 DEBUG (1): 
+0:2:1.929657391 DEBUG (4): RX TCP for socket 0 state=4 (local 4:204, remote 1:123) seq=1 dataLen=0
+0:2:1.929657391 DEBUG (4): CC: fd=0 slow-start ackedBytes=4 cwnd=8 ssthresh=16
+0:2:1.929657391 DEBUG (4): trySendData: entered (fd=0, lastByteWritten=128, lastByteSent=4, lastByteAcked=4)
+0:2:1.929657391 DEBUG (4): CC: trySendData fd=0 cwnd=8 effWin=8 inFlight=0
+0:2:1.929657391 DEBUG (4): trySendData: sent segment seq=5 dataLen=4 inFlight=4 effectiveWindow=8
+0:2:1.929657391 DEBUG (4): trySendData: sent segment seq=9 dataLen=4 inFlight=8 effectiveWindow=8
+0:2:1.929657391 DEBUG (4): trySendData: exited (fd=0, lastByteSent=12, inFlight=8)
+0:2:2.022858055 DEBUG (4): RX TCP for socket 0 state=4 (local 4:204, remote 1:123) seq=1 dataLen=0
+0:2:2.022858055 DEBUG (4): trySendData: entered (fd=0, lastByteWritten=128, lastByteSent=12, lastByteAcked=4)
+0:2:2.022858055 DEBUG (4): CC: trySendData fd=0 cwnd=8 effWin=8 inFlight=8
+0:2:2.022858055 DEBUG (4): trySendData: exited (fd=0, lastByteSent=12, inFlight=8)
+0:2:2.198242445 DEBUG (1): RX TCP for socket 1 state=4 (local 1:123, remote 4:204) seq=5 dataLen=4
+0:2:2.198242445 DEBUG (1): trySendData: entered (fd=1, lastByteWritten=0, lastByteSent=0, lastByteAcked=0)
+0:2:2.198242445 DEBUG (1): CC: trySendData fd=1 cwnd=4 effWin=4 inFlight=0
+0:2:2.198242445 DEBUG (1): trySendData: exited (fd=1, lastByteSent=0, inFlight=0)
+0:2:2.198242445 DEBUG (1): EST: sending ACK ack=9 advWindow=124 (fd=1)
+0:2:2.416016168 DEBUG (4): trySendData: entered (fd=0, lastByteWritten=132, lastByteSent=12, lastByteAcked=4)
+0:2:2.416016168 DEBUG (4): CC: trySendData fd=0 cwnd=8 effWin=8 inFlight=8
+0:2:2.416016168 DEBUG (4): trySendData: exited (fd=0, lastByteSent=12, inFlight=8)
+0:2:2.416016168 DEBUG (4): Client wrote 4 bytes from node 4
+0:2:2.597656393 DEBUG (1): Reading Data (fd=1):0:2:2.597656393 DEBUG (1): 2,0:2:2.597656393 DEBUG (1): 3,0:2:2.597656393 DEBUG (1): 
+0:2:2.906250543 DEBUG (4): Timeout on fd=0 seqStart=9, retransmitting unACKed data
+0:2:2.906250543 DEBUG (4): CC: timeout fd=0, ssthresh=4, cwnd reset to 4
+0:2:2.906250543 DEBUG (4): trySendData: entered (fd=0, lastByteWritten=132, lastByteSent=4, lastByteAcked=4)
+0:2:2.906250543 DEBUG (4): CC: trySendData fd=0 cwnd=4 effWin=4 inFlight=0
+0:2:2.906250543 DEBUG (4): trySendData: sent segment seq=5 dataLen=4 inFlight=4 effectiveWindow=4
+0:2:2.906250543 DEBUG (4): trySendData: exited (fd=0, lastByteSent=8, inFlight=4)
+0:2:3.255737668 DEBUG (4): RX TCP for socket 0 state=4 (local 4:204, remote 1:123) seq=1 dataLen=0
+0:2:3.255737668 DEBUG (4): CC: fd=0 cong-avoid ackedBytes=4 cwnd=5 ssthresh=4
+0:2:3.255737668 DEBUG (4): trySendData: entered (fd=0, lastByteWritten=132, lastByteSent=8, lastByteAcked=8)
+0:2:3.255737668 DEBUG (4): CC: trySendData fd=0 cwnd=5 effWin=5 inFlight=0
+0:2:3.255737668 DEBUG (4): trySendData: sent segment seq=9 dataLen=4 inFlight=4 effectiveWindow=5
+0:2:3.255737668 DEBUG (4): trySendData: sent segment seq=13 dataLen=1 inFlight=5 effectiveWindow=5
+0:2:3.255737668 DEBUG (4): trySendData: exited (fd=0, lastByteSent=13, inFlight=5)
+0:2:3.392578668 DEBUG (4): trySendData: entered (fd=0, lastByteWritten=136, lastByteSent=13, lastByteAcked=8)
+0:2:3.392578668 DEBUG (4): CC: trySendData fd=0 cwnd=5 effWin=5 inFlight=5
+0:2:3.392578668 DEBUG (4): trySendData: exited (fd=0, lastByteSent=13, inFlight=5)
+0:2:3.392578668 DEBUG (4): Client wrote 4 bytes from node 4
+0:2:3.516388210 DEBUG (1): RX TCP for socket 1 state=4 (local 1:123, remote 4:204) seq=5 dataLen=4
+0:2:3.516388210 DEBUG (1): trySendData: entered (fd=1, lastByteWritten=0, lastByteSent=0, lastByteAcked=0)
+0:2:3.516388210 DEBUG (1): CC: trySendData fd=1 cwnd=4 effWin=4 inFlight=0
+0:2:3.516388210 DEBUG (1): trySendData: exited (fd=1, lastByteSent=0, inFlight=0)
+0:2:3.516388210 DEBUG (1): EST: duplicate data seq=5 expected=9 (fd=1)
+0:2:3.516388210 DEBUG (1): EST: sending ACK ack=9 advWindow=128 (fd=1)
+0:2:3.760299931 DEBUG (1): RX TCP for socket 1 state=4 (local 1:123, remote 4:204) seq=9 dataLen=4
+0:2:3.760299931 DEBUG (1): trySendData: entered (fd=1, lastByteWritten=0, lastByteSent=0, lastByteAcked=0)
+0:2:3.760299931 DEBUG (1): CC: trySendData fd=1 cwnd=4 effWin=4 inFlight=0
+0:2:3.760299931 DEBUG (1): trySendData: exited (fd=1, lastByteSent=0, inFlight=0)
+0:2:3.760299931 DEBUG (1): EST: sending ACK ack=13 advWindow=124 (fd=1)
+0:2:3.978058099 DEBUG (1): RX TCP for socket 1 state=4 (local 1:123, remote 4:204) seq=13 dataLen=1
+0:2:3.978058099 DEBUG (1): trySendData: entered (fd=1, lastByteWritten=0, lastByteSent=0, lastByteAcked=0)
+0:2:3.978058099 DEBUG (1): CC: trySendData fd=1 cwnd=4 effWin=4 inFlight=0
+0:2:3.978058099 DEBUG (1): trySendData: exited (fd=1, lastByteSent=0, inFlight=0)
+0:2:3.978058099 DEBUG (1): EST: sending ACK ack=14 advWindow=123 (fd=1)
+0:2:4.062500143 DEBUG (1): Reading Data (fd=1):0:2:4.062500143 DEBUG (1): 4,0:2:4.062500143 DEBUG (1): 5,0:2:4.062500143 DEBUG (1): 
+0:2:4.231445855 DEBUG (4): Timeout on fd=0 seqStart=13, retransmitting unACKed data
+0:2:4.231445855 DEBUG (4): CC: timeout fd=0, ssthresh=4, cwnd reset to 4
+0:2:4.231445855 DEBUG (4): trySendData: entered (fd=0, lastByteWritten=136, lastByteSent=8, lastByteAcked=8)
+0:2:4.231445855 DEBUG (4): CC: trySendData fd=0 cwnd=4 effWin=4 inFlight=0
+0:2:4.231445855 DEBUG (4): trySendData: sent segment seq=9 dataLen=4 inFlight=4 effectiveWindow=4
+0:2:4.231445855 DEBUG (4): trySendData: exited (fd=0, lastByteSent=12, inFlight=4)
+0:2:4.239303997 DEBUG (4): RX TCP for socket 0 state=4 (local 4:204, remote 1:123) seq=1 dataLen=0
+0:2:4.239303997 DEBUG (4): CC: fd=0 cong-avoid ackedBytes=4 cwnd=5 ssthresh=4
+0:2:4.239303997 DEBUG (4): trySendData: entered (fd=0, lastByteWritten=136, lastByteSent=12, lastByteAcked=12)
+0:2:4.239303997 DEBUG (4): CC: trySendData fd=0 cwnd=5 effWin=5 inFlight=0
+0:2:4.239303997 DEBUG (4): trySendData: sent segment seq=13 dataLen=4 inFlight=4 effectiveWindow=5
+0:2:4.239303997 DEBUG (4): trySendData: sent segment seq=17 dataLen=1 inFlight=5 effectiveWindow=5
+0:2:4.239303997 DEBUG (4): trySendData: exited (fd=0, lastByteSent=17, inFlight=5)
+0:2:4.369141168 DEBUG (4): trySendData: entered (fd=0, lastByteWritten=140, lastByteSent=17, lastByteAcked=12)
+0:2:4.369141168 DEBUG (4): CC: trySendData fd=0 cwnd=5 effWin=5 inFlight=5
+0:2:4.369141168 DEBUG (4): trySendData: exited (fd=0, lastByteSent=17, inFlight=5)
+0:2:4.369141168 DEBUG (4): Client wrote 4 bytes from node 4
+0:2:4.581573823 DEBUG (4): RX TCP for socket 0 state=4 (local 4:204, remote 1:123) seq=1 dataLen=0
+0:2:4.581573823 DEBUG (4): CC: fd=0 cong-avoid ackedBytes=1 cwnd=6 ssthresh=4
+0:2:4.581573823 DEBUG (4): trySendData: entered (fd=0, lastByteWritten=140, lastByteSent=17, lastByteAcked=13)
+0:2:4.581573823 DEBUG (4): CC: trySendData fd=0 cwnd=6 effWin=6 inFlight=4
+0:2:4.581573823 DEBUG (4): trySendData: sent segment seq=18 dataLen=2 inFlight=6 effectiveWindow=6
+0:2:4.581573823 DEBUG (4): trySendData: exited (fd=0, lastByteSent=19, inFlight=6)
+0:2:4.774444792 DEBUG (1): RX TCP for socket 1 state=4 (local 1:123, remote 4:204) seq=9 dataLen=4
+0:2:4.774444792 DEBUG (1): trySendData: entered (fd=1, lastByteWritten=0, lastByteSent=0, lastByteAcked=0)
+0:2:4.774444792 DEBUG (1): CC: trySendData fd=1 cwnd=4 effWin=4 inFlight=0
+0:2:4.774444792 DEBUG (1): trySendData: exited (fd=1, lastByteSent=0, inFlight=0)
+0:2:4.774444792 DEBUG (1): EST: duplicate data seq=9 expected=14 (fd=1)
+0:2:4.774444792 DEBUG (1): EST: sending ACK ack=14 advWindow=128 (fd=1)
+0:2:4.857422418 DEBUG (4): trySendData: entered (fd=0, lastByteWritten=141, lastByteSent=19, lastByteAcked=13)
+0:2:4.857422418 DEBUG (4): CC: trySendData fd=0 cwnd=6 effWin=6 inFlight=6
+0:2:4.857422418 DEBUG (4): trySendData: exited (fd=0, lastByteSent=19, inFlight=6)
+0:2:4.857422418 DEBUG (4): Client wrote 1 bytes from node 4
+0:2:4.988647694 DEBUG (1): RX TCP for socket 1 state=4 (local 1:123, remote 4:204) seq=13 dataLen=4
+0:2:4.988647694 DEBUG (1): trySendData: entered (fd=1, lastByteWritten=0, lastByteSent=0, lastByteAcked=0)
+0:2:4.988647694 DEBUG (1): CC: trySendData fd=1 cwnd=4 effWin=4 inFlight=0
+0:2:4.988647694 DEBUG (1): trySendData: exited (fd=1, lastByteSent=0, inFlight=0)
+0:2:4.988647694 DEBUG (1): EST: duplicate data seq=13 expected=14 (fd=1)
+0:2:4.988647694 DEBUG (1): EST: sending ACK ack=14 advWindow=128 (fd=1)
+0:2:5.215820855 DEBUG (4): Timeout on fd=0 seqStart=17, retransmitting unACKed data
+0:2:5.215820855 DEBUG (4): CC: timeout fd=0, ssthresh=4, cwnd reset to 4
+0:2:5.215820855 DEBUG (4): trySendData: entered (fd=0, lastByteWritten=141, lastByteSent=13, lastByteAcked=13)
+0:2:5.215820855 DEBUG (4): CC: trySendData fd=0 cwnd=4 effWin=4 inFlight=0
+0:2:5.215820855 DEBUG (4): trySendData: sent segment seq=14 dataLen=4 inFlight=4 effectiveWindow=4
+0:2:5.215820855 DEBUG (4): trySendData: exited (fd=0, lastByteSent=17, inFlight=4)
+0:2:5.258743694 DEBUG (4): RX TCP for socket 0 state=4 (local 4:204, remote 1:123) seq=1 dataLen=0
+0:2:5.258743694 DEBUG (4): trySendData: entered (fd=0, lastByteWritten=141, lastByteSent=17, lastByteAcked=13)
+0:2:5.258743694 DEBUG (4): CC: trySendData fd=0 cwnd=4 effWin=4 inFlight=4
+0:2:5.258743694 DEBUG (4): trySendData: exited (fd=0, lastByteSent=17, inFlight=4)
+0:2:5.289261248 DEBUG (4): RX TCP for socket 0 state=4 (local 4:204, remote 1:123) seq=1 dataLen=0
+0:2:5.289261248 DEBUG (4): trySendData: entered (fd=0, lastByteWritten=141, lastByteSent=17, lastByteAcked=13)
+0:2:5.289261248 DEBUG (4): CC: trySendData fd=0 cwnd=4 effWin=4 inFlight=4
+0:2:5.289261248 DEBUG (4): trySendData: exited (fd=0, lastByteSent=17, inFlight=4)
+0:2:5.461960108 DEBUG (1): RX TCP for socket 1 state=4 (local 1:123, remote 4:204) seq=18 dataLen=2
+0:2:5.461960108 DEBUG (1): trySendData: entered (fd=1, lastByteWritten=0, lastByteSent=0, lastByteAcked=0)
+0:2:5.461960108 DEBUG (1): CC: trySendData fd=1 cwnd=4 effWin=4 inFlight=0
+0:2:5.461960108 DEBUG (1): trySendData: exited (fd=1, lastByteSent=0, inFlight=0)
+0:2:5.461960108 DEBUG (1): EST: out-of-order seq=18 expected=14 (drop, fd=1)
+0:2:5.461960108 DEBUG (1): EST: sending ACK ack=14 advWindow=128 (fd=1)
+0:2:5.515716943 DEBUG (4): RX TCP for socket 0 state=4 (local 4:204, remote 1:123) seq=1 dataLen=0
+0:2:5.515716943 DEBUG (4): trySendData: entered (fd=0, lastByteWritten=141, lastByteSent=17, lastByteAcked=13)
+0:2:5.515716943 DEBUG (4): CC: trySendData fd=0 cwnd=4 effWin=4 inFlight=4
+0:2:5.515716943 DEBUG (4): trySendData: exited (fd=0, lastByteSent=17, inFlight=4)
+0:2:5.937530834 DEBUG (4): RX TCP for socket 0 state=4 (local 4:204, remote 1:123) seq=1 dataLen=0
+0:2:5.937530834 DEBUG (4): trySendData: entered (fd=0, lastByteWritten=141, lastByteSent=17, lastByteAcked=13)
+0:2:5.937530834 DEBUG (4): CC: trySendData fd=0 cwnd=4 effWin=4 inFlight=4
+0:2:5.937530834 DEBUG (4): trySendData: exited (fd=0, lastByteSent=17, inFlight=4)
+0:2:31.669144349 DEBUG (5): Command Type: Test_Client
+0:2:31.669144349 DEBUG (5): Client: SYN sent (fd=0, iss=0)
+0:2:31.669144349 DEBUG (5): connect(): fd=0 to 1:123
+0:2:31.669144349 DEBUG (5): Client started node=5 -> 1:123 transfer=1000
+0:2:32.157227239 DEBUG (5): Client wrote 64 bytes from node 5
+0:2:32.499222075 DEBUG (1): RX TCP with no matching socket (local 1:123, remote 5:205) flags=1
+0:2:32.499222075 DEBUG (1): SYN received from 5:205, SYN+ACK sent, newFd=2 (pendingAccept=TRUE)
+0:2:32.645508489 DEBUG (5): Client wrote 64 bytes from node 5
+0:2:33.135132375 DEBUG (5): RX TCP for socket 0 state=2 (local 5:205, remote 1:123) seq=0 dataLen=0
+0:2:33.135132375 DEBUG (5): SYN_SENT: received SYN+ACK ack=1 expected=1 (fd=0)
+0:2:33.135132375 DEBUG (5): Client: connection ESTABLISHED (fd=0)
+0:2:33.135132375 DEBUG (5): trySendData: entered (fd=0, lastByteWritten=128, lastByteSent=0, lastByteAcked=0)
+0:2:33.135132375 DEBUG (5): CC: trySendData fd=0 cwnd=4 effWin=4 inFlight=0
+0:2:33.135132375 DEBUG (5): trySendData: sent segment seq=1 dataLen=4 inFlight=4 effectiveWindow=4
+0:2:33.135132375 DEBUG (5): trySendData: exited (fd=0, lastByteSent=4, inFlight=4)
+0:2:33.384628497 DEBUG (1): RX TCP for socket 2 state=3 (local 1:123, remote 5:205) seq=1 dataLen=0
+0:2:33.384628497 DEBUG (1): SYN_RCVD: received segment flags=2 ack=1 expected_ack=1 seq=1 expected_seq=1 (fd=2)
+0:2:33.384628497 DEBUG (1): Server: connection ESTABLISHED (fd=2, pendingAccept=1, remote=5:205)
+0:2:33.384628497 DEBUG (1): trySendData: entered (fd=2, lastByteWritten=0, lastByteSent=0, lastByteAcked=0)
+0:2:33.384628497 DEBUG (1): CC: trySendData fd=2 cwnd=4 effWin=0 inFlight=0
+0:2:33.384628497 DEBUG (1): trySendData: exited (fd=2, lastByteSent=0, inFlight=0)
+0:2:33.563385279 DEBUG (1): RX TCP for socket 2 state=4 (local 1:123, remote 5:205) seq=1 dataLen=4
+0:2:33.563385279 DEBUG (1): trySendData: entered (fd=2, lastByteWritten=0, lastByteSent=0, lastByteAcked=0)
+0:2:33.563385279 DEBUG (1): CC: trySendData fd=2 cwnd=4 effWin=4 inFlight=0
+0:2:33.563385279 DEBUG (1): trySendData: exited (fd=2, lastByteSent=0, inFlight=0)
+0:2:33.563385279 DEBUG (1): EST: sending ACK ack=5 advWindow=124 (fd=2)
+0:2:33.847656393 DEBUG (1): accept(): listenFd=0 returning newFd=2
+0:2:33.847656393 DEBUG (1): accept(): node=1 accepted fd=2
+0:2:33.847656393 DEBUG (1): Reading Data (fd=2):0:2:33.847656393 DEBUG (1): 0,0:2:33.847656393 DEBUG (1): 1,0:2:33.847656393 DEBUG (1): 
+0:2:34.286896255 DEBUG (5): RX TCP for socket 0 state=4 (local 5:205, remote 1:123) seq=1 dataLen=0
+0:2:34.286896255 DEBUG (5): CC: fd=0 slow-start ackedBytes=4 cwnd=8 ssthresh=16
+0:2:34.286896255 DEBUG (5): trySendData: entered (fd=0, lastByteWritten=128, lastByteSent=4, lastByteAcked=4)
+0:2:34.286896255 DEBUG (5): CC: trySendData fd=0 cwnd=8 effWin=8 inFlight=0
+0:2:34.286896255 DEBUG (5): trySendData: sent segment seq=5 dataLen=4 inFlight=4 effectiveWindow=8
+0:2:34.286896255 DEBUG (5): trySendData: sent segment seq=9 dataLen=4 inFlight=8 effectiveWindow=8
+0:2:34.286896255 DEBUG (5): trySendData: exited (fd=0, lastByteSent=12, inFlight=8)
+0:2:34.598633489 DEBUG (5): trySendData: entered (fd=0, lastByteWritten=132, lastByteSent=12, lastByteAcked=4)
+0:2:34.598633489 DEBUG (5): CC: trySendData fd=0 cwnd=8 effWin=8 inFlight=8
+0:2:34.598633489 DEBUG (5): trySendData: exited (fd=0, lastByteSent=12, inFlight=8)
+0:2:34.598633489 DEBUG (5): Client wrote 4 bytes from node 5
+0:2:34.870651505 DEBUG (1): RX TCP for socket 2 state=4 (local 1:123, remote 5:205) seq=5 dataLen=4
+0:2:34.870651505 DEBUG (1): trySendData: entered (fd=2, lastByteWritten=0, lastByteSent=0, lastByteAcked=0)
+0:2:34.870651505 DEBUG (1): CC: trySendData fd=2 cwnd=4 effWin=4 inFlight=0
+0:2:34.870651505 DEBUG (1): trySendData: exited (fd=2, lastByteSent=0, inFlight=0)
+0:2:34.870651505 DEBUG (1): EST: sending ACK ack=9 advWindow=124 (fd=2)
+0:2:34.886505380 DEBUG (1): RX TCP for socket 2 state=4 (local 1:123, remote 5:205) seq=9 dataLen=4
+0:2:34.886505380 DEBUG (1): trySendData: entered (fd=2, lastByteWritten=0, lastByteSent=0, lastByteAcked=0)
+0:2:34.886505380 DEBUG (1): CC: trySendData fd=2 cwnd=4 effWin=4 inFlight=0
+0:2:34.886505380 DEBUG (1): trySendData: exited (fd=2, lastByteSent=0, inFlight=0)
+0:2:34.886505380 DEBUG (1): EST: sending ACK ack=13 advWindow=120 (fd=2)
+0:2:35.263672551 DEBUG (5): Timeout on fd=0 seqStart=9, retransmitting unACKed data
+0:2:35.263672551 DEBUG (5): CC: timeout fd=0, ssthresh=4, cwnd reset to 4
+0:2:35.263672551 DEBUG (5): trySendData: entered (fd=0, lastByteWritten=132, lastByteSent=4, lastByteAcked=4)
+0:2:35.263672551 DEBUG (5): CC: trySendData fd=0 cwnd=4 effWin=4 inFlight=0
+0:2:35.263672551 DEBUG (5): trySendData: sent segment seq=5 dataLen=4 inFlight=4 effectiveWindow=4
+0:2:35.263672551 DEBUG (5): trySendData: exited (fd=0, lastByteSent=8, inFlight=4)
+0:2:35.312500143 DEBUG (1): Reading Data (fd=2):0:2:35.312500143 DEBUG (1): 2,0:2:35.312500143 DEBUG (1): 3,0:2:35.312500143 DEBUG (1): 4,0:2:35.312500143 DEBUG (1): 5,0:2:35.312500143 DEBUG (1): 
+0:2:35.530808016 DEBUG (5): RX TCP for socket 0 state=4 (local 5:205, remote 1:123) seq=1 dataLen=0
+0:2:35.530808016 DEBUG (5): CC: fd=0 cong-avoid ackedBytes=4 cwnd=5 ssthresh=4
+0:2:35.530808016 DEBUG (5): trySendData: entered (fd=0, lastByteWritten=132, lastByteSent=8, lastByteAcked=8)
+0:2:35.530808016 DEBUG (5): CC: trySendData fd=0 cwnd=5 effWin=5 inFlight=0
+0:2:35.530808016 DEBUG (5): trySendData: sent segment seq=9 dataLen=4 inFlight=4 effectiveWindow=5
+0:2:35.530808016 DEBUG (5): trySendData: sent segment seq=13 dataLen=1 inFlight=5 effectiveWindow=5
+0:2:35.530808016 DEBUG (5): trySendData: exited (fd=0, lastByteSent=13, inFlight=5)
+0:2:35.575195989 DEBUG (5): trySendData: entered (fd=0, lastByteWritten=136, lastByteSent=13, lastByteAcked=8)
+0:2:35.575195989 DEBUG (5): CC: trySendData fd=0 cwnd=5 effWin=5 inFlight=5
+0:2:35.575195989 DEBUG (5): trySendData: exited (fd=0, lastByteSent=13, inFlight=5)
+0:2:35.575195989 DEBUG (5): Client wrote 4 bytes from node 5
+0:2:36.142074823 DEBUG (1): RX TCP for socket 2 state=4 (local 1:123, remote 5:205) seq=5 dataLen=4
+0:2:36.142074823 DEBUG (1): trySendData: entered (fd=2, lastByteWritten=0, lastByteSent=0, lastByteAcked=0)
+0:2:36.142074823 DEBUG (1): CC: trySendData fd=2 cwnd=4 effWin=4 inFlight=0
+0:2:36.142074823 DEBUG (1): trySendData: exited (fd=2, lastByteSent=0, inFlight=0)
+0:2:36.142074823 DEBUG (1): EST: duplicate data seq=5 expected=13 (fd=2)
+0:2:36.142074823 DEBUG (1): EST: sending ACK ack=13 advWindow=128 (fd=2)
+0:2:36.272140728 DEBUG (1): RX TCP for socket 2 state=4 (local 1:123, remote 5:205) seq=9 dataLen=4
+0:2:36.272140728 DEBUG (1): trySendData: entered (fd=2, lastByteWritten=0, lastByteSent=0, lastByteAcked=0)
+0:2:36.272140728 DEBUG (1): CC: trySendData fd=2 cwnd=4 effWin=4 inFlight=0
+0:2:36.272140728 DEBUG (1): trySendData: exited (fd=2, lastByteSent=0, inFlight=0)
+0:2:36.272140728 DEBUG (1): EST: duplicate data seq=9 expected=13 (fd=2)
+0:2:36.272140728 DEBUG (1): EST: sending ACK ack=13 advWindow=128 (fd=2)
+0:2:36.506836614 DEBUG (5): Timeout on fd=0 seqStart=13, retransmitting unACKed data
+0:2:36.506836614 DEBUG (5): CC: timeout fd=0, ssthresh=4, cwnd reset to 4
+0:2:36.506836614 DEBUG (5): trySendData: entered (fd=0, lastByteWritten=136, lastByteSent=8, lastByteAcked=8)
+0:2:36.506836614 DEBUG (5): CC: trySendData fd=0 cwnd=4 effWin=4 inFlight=0
+0:2:36.506836614 DEBUG (5): trySendData: sent segment seq=9 dataLen=4 inFlight=4 effectiveWindow=4
+0:2:36.506836614 DEBUG (5): trySendData: exited (fd=0, lastByteSent=12, inFlight=4)
+0:2:36.682419082 DEBUG (1): RX TCP for socket 2 state=4 (local 1:123, remote 5:205) seq=13 dataLen=1
+0:2:36.682419082 DEBUG (1): trySendData: entered (fd=2, lastByteWritten=0, lastByteSent=0, lastByteAcked=0)
+0:2:36.682419082 DEBUG (1): CC: trySendData fd=2 cwnd=4 effWin=4 inFlight=0
+0:2:36.682419082 DEBUG (1): trySendData: exited (fd=2, lastByteSent=0, inFlight=0)
+0:2:36.682419082 DEBUG (1): EST: sending ACK ack=14 advWindow=127 (fd=2)
+0:2:36.897522491 DEBUG (5): RX TCP for socket 0 state=4 (local 5:205, remote 1:123) seq=1 dataLen=0
+0:2:36.897522491 DEBUG (5): CC: fd=0 cong-avoid ackedBytes=4 cwnd=5 ssthresh=4
+0:2:36.897522491 DEBUG (5): trySendData: entered (fd=0, lastByteWritten=136, lastByteSent=12, lastByteAcked=12)
+0:2:36.897522491 DEBUG (5): CC: trySendData fd=0 cwnd=5 effWin=5 inFlight=0
+0:2:36.897522491 DEBUG (5): trySendData: sent segment seq=13 dataLen=4 inFlight=4 effectiveWindow=5
+0:2:36.897522491 DEBUG (5): trySendData: sent segment seq=17 dataLen=1 inFlight=5 effectiveWindow=5
+0:2:36.897522491 DEBUG (5): trySendData: exited (fd=0, lastByteSent=17, inFlight=5)
+0:2:36.921203881 DEBUG (1): RX TCP for socket 2 state=4 (local 1:123, remote 5:205) seq=9 dataLen=4
+0:2:36.921203881 DEBUG (1): trySendData: entered (fd=2, lastByteWritten=0, lastByteSent=0, lastByteAcked=0)
+0:2:36.921203881 DEBUG (1): CC: trySendData fd=2 cwnd=4 effWin=4 inFlight=0
+0:2:36.921203881 DEBUG (1): trySendData: exited (fd=2, lastByteSent=0, inFlight=0)
+0:2:36.921203881 DEBUG (1): EST: duplicate data seq=9 expected=14 (fd=2)
+0:2:36.921203881 DEBUG (1): EST: sending ACK ack=14 advWindow=128 (fd=2)
+0:2:37.040039739 DEBUG (5): trySendData: entered (fd=0, lastByteWritten=140, lastByteSent=17, lastByteAcked=12)
+0:2:37.040039739 DEBUG (5): CC: trySendData fd=0 cwnd=5 effWin=5 inFlight=5
+0:2:37.040039739 DEBUG (5): trySendData: exited (fd=0, lastByteSent=17, inFlight=5)
+0:2:37.040039739 DEBUG (5): Client wrote 4 bytes from node 5
+0:2:37.427902756 DEBUG (5): RX TCP for socket 0 state=4 (local 5:205, remote 1:123) seq=1 dataLen=0
+0:2:37.427902756 DEBUG (5): CC: fd=0 cong-avoid ackedBytes=1 cwnd=6 ssthresh=4
+0:2:37.427902756 DEBUG (5): trySendData: entered (fd=0, lastByteWritten=140, lastByteSent=17, lastByteAcked=13)
+0:2:37.427902756 DEBUG (5): CC: trySendData fd=0 cwnd=6 effWin=6 inFlight=4
+0:2:37.427902756 DEBUG (5): trySendData: sent segment seq=18 dataLen=2 inFlight=6 effectiveWindow=6
+0:2:37.427902756 DEBUG (5): trySendData: exited (fd=0, lastByteSent=19, inFlight=6)
+0:2:37.478882074 DEBUG (1): RX TCP for socket 2 state=4 (local 1:123, remote 5:205) seq=13 dataLen=4
+0:2:37.478882074 DEBUG (1): trySendData: entered (fd=2, lastByteWritten=0, lastByteSent=0, lastByteAcked=0)
+0:2:37.478882074 DEBUG (1): CC: trySendData fd=2 cwnd=4 effWin=4 inFlight=0
+0:2:37.478882074 DEBUG (1): trySendData: exited (fd=2, lastByteSent=0, inFlight=0)
+0:2:37.478882074 DEBUG (1): EST: duplicate data seq=13 expected=14 (fd=2)
+0:2:37.478882074 DEBUG (1): EST: sending ACK ack=14 advWindow=128 (fd=2)
+0:2:37.528320989 DEBUG (5): trySendData: entered (fd=0, lastByteWritten=141, lastByteSent=19, lastByteAcked=13)
+0:2:37.528320989 DEBUG (5): CC: trySendData fd=0 cwnd=6 effWin=6 inFlight=6
+0:2:37.528320989 DEBUG (5): trySendData: exited (fd=0, lastByteSent=19, inFlight=6)
+0:2:37.528320989 DEBUG (5): Client wrote 1 bytes from node 5
+0:2:37.874024114 DEBUG (5): Timeout on fd=0 seqStart=17, retransmitting unACKed data
+0:2:37.874024114 DEBUG (5): CC: timeout fd=0, ssthresh=4, cwnd reset to 4
+0:2:37.874024114 DEBUG (5): trySendData: entered (fd=0, lastByteWritten=141, lastByteSent=13, lastByteAcked=13)
+0:2:37.874024114 DEBUG (5): CC: trySendData fd=0 cwnd=4 effWin=4 inFlight=0
+0:2:37.874024114 DEBUG (5): trySendData: sent segment seq=14 dataLen=4 inFlight=4 effectiveWindow=4
+0:2:37.874024114 DEBUG (5): trySendData: exited (fd=0, lastByteSent=17, inFlight=4)
+0:2:37.918320196 DEBUG (5): RX TCP for socket 0 state=4 (local 5:205, remote 1:123) seq=1 dataLen=0
+0:2:37.918320196 DEBUG (5): trySendData: entered (fd=0, lastByteWritten=141, lastByteSent=17, lastByteAcked=13)
+0:2:37.918320196 DEBUG (5): CC: trySendData fd=0 cwnd=4 effWin=4 inFlight=4
+0:2:37.918320196 DEBUG (5): trySendData: exited (fd=0, lastByteSent=17, inFlight=4)
+0:2:38.050720473 DEBUG (1): RX TCP for socket 2 state=4 (local 1:123, remote 5:205) seq=18 dataLen=2
+0:2:38.050720473 DEBUG (1): trySendData: entered (fd=2, lastByteWritten=0, lastByteSent=0, lastByteAcked=0)
+0:2:38.050720473 DEBUG (1): CC: trySendData fd=2 cwnd=4 effWin=4 inFlight=0
+0:2:38.050720473 DEBUG (1): trySendData: exited (fd=2, lastByteSent=0, inFlight=0)
+0:2:38.050720473 DEBUG (1): EST: out-of-order seq=18 expected=14 (drop, fd=2)
+0:2:38.050720473 DEBUG (1): EST: sending ACK ack=14 advWindow=128 (fd=2)
+0:2:38.065567506 DEBUG (5): RX TCP for socket 0 state=4 (local 5:205, remote 1:123) seq=1 dataLen=0
+0:2:38.065567506 DEBUG (5): trySendData: entered (fd=0, lastByteWritten=141, lastByteSent=17, lastByteAcked=13)
+0:2:38.065567506 DEBUG (5): CC: trySendData fd=0 cwnd=4 effWin=4 inFlight=4
+0:2:38.065567506 DEBUG (5): trySendData: exited (fd=0, lastByteSent=17, inFlight=4)
+0:2:38.356674706 DEBUG (5): RX TCP for socket 0 state=4 (local 5:205, remote 1:123) seq=1 dataLen=0
+0:2:38.356674706 DEBUG (5): trySendData: entered (fd=0, lastByteWritten=141, lastByteSent=17, lastByteAcked=13)
+0:2:38.356674706 DEBUG (5): CC: trySendData fd=0 cwnd=4 effWin=4 inFlight=4
+0:2:38.356674706 DEBUG (5): trySendData: exited (fd=0, lastByteSent=17, inFlight=4)
+0:29:16.265244856 DEBUG (4): Command Type: Test_Close
+0:29:16.265244856 DEBUG (4): Client closing connection on node 4
+0:29:16.265244856 DEBUG (4): trySendData: entered (fd=0, lastByteWritten=141, lastByteSent=17, lastByteAcked=13)
+0:29:16.265244856 DEBUG (4): CC: trySendData fd=0 cwnd=4 effWin=4 inFlight=4
+0:29:16.265244856 DEBUG (4): trySendData: exited (fd=0, lastByteSent=17, inFlight=4)
+0:29:17.241211480 DEBUG (4): Timeout on fd=0 seqStart=18, retransmitting unACKed data
+0:29:17.241211480 DEBUG (4): CC: timeout fd=0, ssthresh=4, cwnd reset to 4
+0:29:49.033951197 DEBUG (5): Command Type: Test_Close
+0:29:49.033951197 DEBUG (5): Client closing connection on node 5
+0:29:49.033951197 DEBUG (5): trySendData: entered (fd=0, lastByteWritten=141, lastByteSent=17, lastByteAcked=13)
+0:29:49.033951197 DEBUG (5): CC: trySendData fd=0 cwnd=4 effWin=4 inFlight=4
+0:29:49.033951197 DEBUG (5): trySendData: exited (fd=0, lastByteSent=17, inFlight=4)
+0:29:49.322311528 DEBUG (1): RX TCP for socket 2 state=4 (local 1:123, remote 5:205) seq=18 dataLen=0
+0:29:49.322311528 DEBUG (1): trySendData: entered (fd=2, lastByteWritten=0, lastByteSent=0, lastByteAcked=0)
+0:29:49.322311528 DEBUG (1): CC: trySendData fd=2 cwnd=4 effWin=4 inFlight=0
+0:29:49.322311528 DEBUG (1): trySendData: exited (fd=2, lastByteSent=0, inFlight=0)

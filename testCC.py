@@ -12,12 +12,10 @@ def main():
     s.addChannel(s.TRANSPORT_CHANNEL)
     s.addChannel(s.PROJECT3_TGEN_CHANNEL)
 
-    # Let ND/LS converge (same as testA scale)
     s.runTime(300)
     s.testServer(1)
     s.runTime(60)
 
-    # Single TCP client: node 4 -> 1:123, transfer=1000 (same as testA)
     s.testClient(4)
 
     # Run long enough to see cwnd growth and full transfer
