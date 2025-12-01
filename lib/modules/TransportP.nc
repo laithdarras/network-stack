@@ -22,9 +22,13 @@ typedef struct {
    uint16_t localPort;
    uint16_t remoteAddr;
    uint16_t remotePort;
+   // Handshake sequence numbers
+   uint32_t iss;            // Initial send sequence number
+   uint32_t irs;            // Initial receive sequence number from peer
+   uint32_t sndNext;        // Next send sequence number
+   uint32_t rcvNext;        // Next expected receive sequence number
    // TODO: Add send buffer and window fields for sliding window
    // TODO: Add receive buffer and window fields for flow control
-   // TODO: Add sequence number tracking for reliability
 } socket_cb_t;
 
 #define MAX_SOCKETS 8
@@ -47,6 +51,11 @@ implementation {
    socket_store_t socketStores[MAX_NUM_OF_SOCKETS];
    uint8_t socketCount = 0;
    
+   // Forward declarations
+   static error_t sendSegment(uint16_t dstAddr, uint16_t srcPort, uint16_t dstPort, 
+                             uint32_t seq, uint32_t ack, uint8_t flags, 
+                             uint16_t advWindow, uint8_t *data, uint8_t dataLen);
+   
    /**
     * Allocate a new socket from the socket table
     * @return socket_t - index of allocated socket, or NULL_SOCKET if table is full
@@ -61,6 +70,10 @@ implementation {
             sockets[i].localPort = 0;
             sockets[i].remoteAddr = 0;
             sockets[i].remotePort = 0;
+            sockets[i].iss = 0;
+            sockets[i].irs = 0;
+            sockets[i].sndNext = 0;
+            sockets[i].rcvNext = 0;
             return i;
          }
       }
@@ -119,16 +132,115 @@ implementation {
    }
    
    /**
+    * Start client-side handshake (sends SYN)
+    * NOTE: This will be called from Transport.connect() when that is implemented
+    * @param fd - socket file descriptor
+    * @param remoteAddr - remote node address
+    * @param remotePort - remote port
+    * @param localPort - local port to use
+    * @return error_t - SUCCESS if SYN sent, FAIL otherwise
+    */
+   static error_t startClientHandshake(socket_t fd, uint16_t remoteAddr, uint16_t remotePort, uint16_t localPort) {
+      socket_cb_t *s;
+      
+      if (fd >= MAX_SOCKETS || !sockets[fd].inUse) {
+         return FAIL;
+      }
+      
+      s = &sockets[fd];
+      
+      // Initialize 4-tuple
+      s->localAddr = TOS_NODE_ID;
+      s->localPort = localPort;
+      s->remoteAddr = remoteAddr;
+      s->remotePort = remotePort;
+      
+      // Set state to SYN_SENT
+      s->state = TCP_STATE_SYN_SENT;
+      
+      // Choose initial sequence number
+      s->iss = 1;
+      s->sndNext = s->iss + 1;  // SYN consumes one sequence number
+      
+      // Initialize receive sequence numbers
+      s->irs = 0;
+      s->rcvNext = 0;
+      
+      // Send SYN segment
+      if (sendSegment(remoteAddr, localPort, remotePort, 
+                      s->iss, 0, TCP_FLAG_SYN, 0, NULL, 0) == SUCCESS) {
+         dbg("Project3TCP", "Client: SYN sent (fd=%hhu, iss=%lu)\n", fd, s->iss);
+         return SUCCESS;
+      }
+      
+      return FAIL;
+   }
+   
+   /**
     * Handle a received TCP segment for a specific socket
     * @param fd - socket file descriptor
     * @param seg - pointer to received TCP segment
     * @param dataLen - length of data in segment
     */
    static void handleSegmentForSocket(socket_t fd, tcp_segment_t *seg, uint8_t dataLen) {
-      // TODO: Implement handshake logic (SYN/SYN+ACK/ACK)
-      // TODO: Implement sliding window for reliability
-      // TODO: Implement flow control using advWindow
-      // TODO: Handle data segments, ACKs, FINs based on socket state
+      socket_cb_t *s;
+      uint8_t flags;
+      
+      if (fd >= MAX_SOCKETS || !sockets[fd].inUse) {
+         return;
+      }
+      
+      s = &sockets[fd];
+      flags = seg->header.flags;
+      
+      // Handle handshake based on current state
+      switch (s->state) {
+         case TCP_STATE_SYN_SENT:
+            // Client waiting for SYN+ACK
+            if ((flags & TCP_FLAG_SYN) && (flags & TCP_FLAG_ACK)) {
+               // Validate ACK acknowledges our SYN
+               if (seg->header.ack == s->sndNext) {
+                  // Record peer's initial sequence number
+                  s->irs = seg->header.seq;
+                  s->rcvNext = seg->header.seq + 1;  // SYN consumes one sequence number
+                  
+                  // Send final ACK
+                  if (sendSegment(s->remoteAddr, s->localPort, s->remotePort,
+                                  s->sndNext, s->rcvNext, TCP_FLAG_ACK, 0, NULL, 0) == SUCCESS) {
+                     s->state = TCP_STATE_ESTABLISHED;
+                     dbg("Project3TCP", "Client: connection ESTABLISHED (fd=%hhu)\n", fd);
+                  }
+               } else {
+                  dbg("Project3TCP", "Client: invalid ACK in SYN+ACK (expected %lu, got %lu)\n", 
+                      s->sndNext, seg->header.ack);
+               }
+            }
+            // Ignore other segments in SYN_SENT state
+            break;
+            
+         case TCP_STATE_SYN_RCVD:
+            // Server waiting for final ACK
+            if ((flags & TCP_FLAG_ACK) && !(flags & TCP_FLAG_SYN)) {
+               // Validate ACK acknowledges our SYN and sequence matches
+               if (seg->header.ack == s->sndNext && seg->header.seq == s->rcvNext) {
+                  s->state = TCP_STATE_ESTABLISHED;
+                  dbg("Project3TCP", "Server: connection ESTABLISHED (fd=%hhu)\n", fd);
+               } else {
+                  dbg("Project3TCP", "Server: invalid ACK (ack=%lu expected %lu, seq=%lu expected %lu)\n",
+                      seg->header.ack, s->sndNext, seg->header.seq, s->rcvNext);
+               }
+            }
+            // Ignore other segments in SYN_RCVD state
+            break;
+            
+         case TCP_STATE_ESTABLISHED:
+            // TODO: Handle data segments, ACKs, FINs in ESTABLISHED state
+            break;
+            
+         default:
+            // Ignore segments in other states for now
+            break;
+      }
    }
 
    /**
@@ -144,8 +256,7 @@ implementation {
     * @param dataLen - Length of data payload (0 if no data)
     * @return error_t - SUCCESS if sent, FAIL otherwise
     */
-
-   error_t sendSegment(uint16_t dstAddr, uint16_t srcPort, uint16_t dstPort, 
+   static error_t sendSegment(uint16_t dstAddr, uint16_t srcPort, uint16_t dstPort, 
                       uint32_t seq, uint32_t ack, uint8_t flags, 
                       uint16_t advWindow, uint8_t *data, uint8_t dataLen) {
       // Declare all variables at the top
@@ -314,9 +425,55 @@ implementation {
              fd, sockets[fd].state, dstAddr, dstPort, srcAddr, srcPort);
          handleSegmentForSocket(fd, seg, dataLen);
       } else {
-         // No matching socket found
-         dbg("Project 3 - TCP", "RX TCP with no matching socket (local %hu:%hu, remote %hu:%hu)\n", 
-             dstAddr, dstPort, srcAddr, srcPort);
+         // No matching socket found - check if this is a SYN for a new connection
+         if (flags & TCP_FLAG_SYN) {
+            // Look for a listening socket on the destination port
+            socket_t listenFd = findListeningSocketByPort(dstPort);
+            
+            if (listenFd != NULL_SOCKET) {
+               // Allocate new socket for this connection
+               socket_t newFd = allocSocket();
+               
+               if (newFd != NULL_SOCKET) {
+                  socket_cb_t *newS = &sockets[newFd];
+                  
+                  // Initialize 4-tuple
+                  newS->localAddr = dstAddr;
+                  newS->localPort = dstPort;
+                  newS->remoteAddr = srcAddr;
+                  newS->remotePort = srcPort;
+                  
+                  // Initialize handshake fields
+                  newS->iss = 100;  // Server's initial sequence number
+                  newS->sndNext = newS->iss + 1;  // SYN consumes one sequence number
+                  newS->irs = seq;  // Record client's initial sequence number
+                  newS->rcvNext = seq + 1;  // Expecting next byte after SYN
+                  
+                  // Set state to SYN_RCVD
+                  newS->state = TCP_STATE_SYN_RCVD;
+                  
+                  // Send SYN+ACK
+                  if (sendSegment(srcAddr, dstPort, srcPort,
+                                  newS->iss, newS->rcvNext, 
+                                  TCP_FLAG_SYN | TCP_FLAG_ACK, 0, NULL, 0) == SUCCESS) {
+                     dbg("Project3TCP", "SYN received, SYN+ACK sent, newFd=%hhu\n", newFd);
+                  } else {
+                     // Failed to send SYN+ACK, free the socket
+                     freeSocket(newFd);
+                     dbg("Project3TCP", "Failed to send SYN+ACK, freeing socket %hhu\n", newFd);
+                  }
+               } else {
+                  dbg("Project3TCP", "No free socket available for new connection\n");
+               }
+            } else {
+               // No listening socket on this port
+               dbg("Project3TCP", "SYN received but no listening socket on port %hu\n", dstPort);
+            }
+         } else {
+            // Not a SYN and no matching socket - drop it
+            dbg("Project 3 - TCP", "RX TCP with no matching socket (local %hu:%hu, remote %hu:%hu)\n", 
+                dstAddr, dstPort, srcAddr, srcPort);
+         }
       }
       
       return SUCCESS;
