@@ -114,10 +114,10 @@ implementation {
          return s->lastByteSent - s->lastByteAcked;
       } else {
          // Safety clamp: ACK should never be ahead of what we've sent.
-         dbg(TRANSPORT_CHANNEL,
-             "CC WARNING: lastByteAcked(%u) > lastByteSent(%u), clamping\n",
-             (unsigned int)s->lastByteAcked,
-             (unsigned int)s->lastByteSent);
+         // dbg(TRANSPORT_CHANNEL,
+         //     "CC WARNING: lastByteAcked(%u) > lastByteSent(%u), clamping\n",
+         //     (unsigned int)s->lastByteAcked,
+         //     (unsigned int)s->lastByteSent);
          return 0;
       }
    }
@@ -258,7 +258,7 @@ implementation {
       // Send SYN segment
       if (sendSegment(remoteAddr, localPort, remotePort, 
                       s->iss, 0, TCP_FLAG_SYN, s->advWindow, NULL, 0) == SUCCESS) {
-         dbg(TRANSPORT_CHANNEL, "Client: SYN sent (fd=%hhu, iss=%lu)\n", fd, s->iss);
+         // dbg(TRANSPORT_CHANNEL, "Client: SYN sent (fd=%hhu, iss=%lu)\n", fd, s->iss);
          return SUCCESS;
       }
       
@@ -383,8 +383,8 @@ implementation {
          }
       }
 
-      dbg(TRANSPORT_CHANNEL, "Retrans queue full, dropping seqStart=%lu len=%hu\n",
-          (unsigned long)seqStart, len);
+      // dbg(TRANSPORT_CHANNEL, "Retrans queue full, dropping seqStart=%lu len=%hu\n",
+      //     (unsigned long)seqStart, len);
    }
 
    // Cleanup retrans entries fully acknowledged
@@ -437,8 +437,8 @@ implementation {
          return;
       }
       
-      dbg(TRANSPORT_CHANNEL, "trySendData: entered (fd=%hhu, lastByteWritten=%lu, lastByteSent=%lu, lastByteAcked=%lu)\n",
-          fd, s->lastByteWritten, s->lastByteSent, s->lastByteAcked);
+      // dbg(TRANSPORT_CHANNEL, "trySendData: entered (fd=%hhu, lastByteWritten=%lu, lastByteSent=%lu, lastByteAcked=%lu)\n",
+      //     fd, s->lastByteWritten, s->lastByteSent, s->lastByteAcked);
       
       // Compute in-flight bytes safely
       inFlight = bytesInFlight(s);
@@ -458,8 +458,8 @@ implementation {
          }
       }
 
-      dbg(TRANSPORT_CHANNEL, "CC: trySendData fd=%hhu cwnd=%hu effWin=%hu inFlight=%lu\n",
-          fd, s->cwnd, effectiveWindow, (unsigned long)inFlight);
+      // dbg(TRANSPORT_CHANNEL, "CC: trySendData fd=%hhu cwnd=%hu effWin=%hu inFlight=%lu\n",
+      //     fd, s->cwnd, effectiveWindow, (unsigned long)inFlight);
       
       // Update our advertised window before sending
       s->advWindow = computeRecvFreeSpace(fd);
@@ -519,16 +519,16 @@ implementation {
                enqueueRetrans(fd, seqNum, dataLen, now);
             }
             
-            dbg(TRANSPORT_CHANNEL, "trySendData: sent segment seq=%lu dataLen=%hu inFlight=%lu effectiveWindow=%hu\n",
-                seqNum, dataLen, inFlight, effectiveWindow);
+            // dbg(TRANSPORT_CHANNEL, "trySendData: sent segment seq=%lu dataLen=%hu inFlight=%lu effectiveWindow=%hu\n",
+            //     seqNum, dataLen, inFlight, effectiveWindow);
          } else {
-            dbg(TRANSPORT_CHANNEL, "trySendData: sendSegment failed, breaking\n");
+            // dbg(TRANSPORT_CHANNEL, "trySendData: sendSegment failed, breaking\n");
             break;
          }
       }
       
-      dbg(TRANSPORT_CHANNEL, "trySendData: exited (fd=%hhu, lastByteSent=%lu, inFlight=%lu)\n",
-          fd, s->lastByteSent, inFlight);
+      // dbg(TRANSPORT_CHANNEL, "trySendData: exited (fd=%hhu, lastByteSent=%lu, inFlight=%lu)\n",
+         //  fd, s->lastByteSent, inFlight);
    }
 
    // Send FIN segment for socket
@@ -567,7 +567,7 @@ implementation {
       );
 
       if (err != SUCCESS) {
-         dbg(TRANSPORT_CHANNEL, "sendFin(): sendSegment failed fd=%hhu\n", fd);
+         // dbg(TRANSPORT_CHANNEL, "sendFin(): sendSegment failed fd=%hhu\n", fd);
          return err;
       }
 
@@ -629,8 +629,8 @@ implementation {
                      trySendData(fd);
                   }
                } else {
-                  dbg(TRANSPORT_CHANNEL, "Client: invalid ACK in SYN+ACK (expected %lu, got %lu, fd=%hhu)\n", 
-                      s->sndNext, seg->header.ack, fd);
+                  // dbg(TRANSPORT_CHANNEL, "Client: invalid ACK in SYN+ACK (expected %lu, got %lu, fd=%hhu)\n", 
+                  //     s->sndNext, seg->header.ack, fd);
                }
             }
             // Ignore other segments in SYN_SENT state
@@ -638,8 +638,8 @@ implementation {
             
          case TCP_STATE_SYN_RCVD:
             // Server waiting for final ACK
-            dbg(TRANSPORT_CHANNEL, "SYN_RCVD: received segment flags=%hhu ack=%lu expected_ack=%lu seq=%lu expected_seq=%lu (fd=%hhu)\n",
-                flags, seg->header.ack, s->sndNext, seg->header.seq, s->rcvNext, fd);
+            // dbg(TRANSPORT_CHANNEL, "SYN_RCVD: received segment flags=%hhu ack=%lu expected_ack=%lu seq=%lu expected_seq=%lu (fd=%hhu)\n",
+            //     flags, seg->header.ack, s->sndNext, seg->header.seq, s->rcvNext, fd);
             if ((flags & TCP_FLAG_ACK) && !(flags & TCP_FLAG_SYN)) {
                // Validate ACK acknowledges our SYN and sequence matches
                if (seg->header.ack == s->sndNext && seg->header.seq == s->rcvNext) {
@@ -656,13 +656,13 @@ implementation {
                   if (s->ssthresh < 2 * TCP_MSS) {
                      s->ssthresh = 4 * TCP_MSS;
                   }
-                  dbg(TRANSPORT_CHANNEL, "Server: connection ESTABLISHED (fd=%hhu, pendingAccept=%u, remote=%hu:%hu)\n", 
-                      fd, s->pendingAccept, s->remoteAddr, s->remotePort);
+                  // dbg(TRANSPORT_CHANNEL, "Server: connection ESTABLISHED (fd=%hhu, pendingAccept=%u, remote=%hu:%hu)\n", 
+                  //     fd, s->pendingAccept, s->remoteAddr, s->remotePort);
                   // If any application data was queued before connect completed, send it now
                   trySendData(fd);
                } else {
-                  dbg(TRANSPORT_CHANNEL, "Server: invalid ACK (ack=%lu expected %lu, seq=%lu expected %lu, fd=%hhu)\n",
-                      seg->header.ack, s->sndNext, seg->header.seq, s->rcvNext, fd);
+                  // dbg(TRANSPORT_CHANNEL, "Server: invalid ACK (ack=%lu expected %lu, seq=%lu expected %lu, fd=%hhu)\n",
+                  //     seg->header.ack, s->sndNext, seg->header.seq, s->rcvNext, fd);
                }
             }
             // Ignore other segments in SYN_RCVD state
@@ -696,10 +696,10 @@ implementation {
                   uint32_t proposed = ackNum - 1;
                   if (proposed > s->lastByteAcked) {
                      if (proposed > s->lastByteSent) {
-                        dbg(TRANSPORT_CHANNEL,
-                            "CC WARNING: proposed lastByteAcked(%u) > lastByteSent(%u), clamping\n",
-                            (unsigned int)proposed,
-                            (unsigned int)s->lastByteSent);
+                        // dbg(TRANSPORT_CHANNEL,
+                        //     "CC WARNING: proposed lastByteAcked(%u) > lastByteSent(%u), clamping\n",
+                        //     (unsigned int)proposed,
+                        //     (unsigned int)s->lastByteSent);
                         proposed = s->lastByteSent;
                      }
                      s->lastByteAcked = proposed;
@@ -1049,7 +1049,7 @@ implementation {
       pack sendPack;
 
       
-      dbg(TRANSPORT_CHANNEL, "sendSegment called: dst=%d srcPort=%d dstPort=%d\n", dstAddr, srcPort, dstPort);
+      // dbg(TRANSPORT_CHANNEL, "sendSegment called: dst=%d srcPort=%d dstPort=%d\n", dstAddr, srcPort, dstPort);
       
       // TCP header
       tcpSeg.header.srcPort = srcPort;
@@ -1081,13 +1081,13 @@ implementation {
       
       // Get next hop for destination
       nextHop = call LinkState.nextHop(dstAddr);   // call routing
-      dbg(TRANSPORT_CHANNEL, "sendSegment: nextHop returned %d for dst %d\n", nextHop, dstAddr);
+      // dbg(TRANSPORT_CHANNEL, "sendSegment: nextHop returned %d for dst %d\n", nextHop, dstAddr);
       if (nextHop == 0xFFFF) {
-         dbg(TRANSPORT_CHANNEL, "sendSegment: no route to %d (routing may not have converged yet)\n", dstAddr);
+         // dbg(TRANSPORT_CHANNEL, "sendSegment: no route to %d (routing may not have converged yet)\n", dstAddr);
          return FAIL;
       }
       
-      dbg(TRANSPORT_CHANNEL, "sendSegment: nextHop=%d, sending\n", nextHop);
+      // dbg(TRANSPORT_CHANNEL, "sendSegment: nextHop=%d, sending\n", nextHop);
       
       // Create pack struct to send via SimpleSend
       // NOTE: The TCP segment is placed in the payload field of the pack struct
@@ -1099,18 +1099,18 @@ implementation {
       
       // Copy TCP segment into pack payload
       if (len > PACKET_MAX_PAYLOAD_SIZE) {
-         dbg(TRANSPORT_CHANNEL, "sendSegment: segment too large\n");
+         // dbg(TRANSPORT_CHANNEL, "sendSegment: segment too large\n");
          return FAIL;
       }
       memcpy(sendPack.payload, (uint8_t *)&tcpSeg, len);
       
       // Send via SimpleSend to next hop
       if (call SimpleSend.send(sendPack, nextHop) == SUCCESS) {
-         dbg(TRANSPORT_CHANNEL, "sendSegment: sent successfully\n");
+         // dbg(TRANSPORT_CHANNEL, "sendSegment: sent successfully\n");
          return SUCCESS;
       }
       
-      dbg(TRANSPORT_CHANNEL, "sendSegment: SimpleSend.send failed\n");
+      // dbg(TRANSPORT_CHANNEL, "sendSegment: SimpleSend.send failed\n");
       return FAIL;
    }
 
@@ -1215,7 +1215,7 @@ implementation {
       }
 
       s->state = TCP_STATE_LISTEN;
-      dbg(TRANSPORT_CHANNEL, "listen(): fd=%hhu on port=%hu\n", fd, s->localPort);
+      // dbg(TRANSPORT_CHANNEL, "listen(): fd=%hhu on port=%hu\n", fd, s->localPort);
       return SUCCESS;
    }
 
@@ -1255,7 +1255,7 @@ implementation {
          }
 
          s->pendingAccept = FALSE;
-         dbg(TRANSPORT_CHANNEL, "accept(): listenFd=%hhu returning newFd=%hhu\n", fd, i);
+         // dbg(TRANSPORT_CHANNEL, "accept(): listenFd=%hhu returning newFd=%hhu\n", fd, i);
          return (socket_t)i;
       }
 
@@ -1290,7 +1290,7 @@ implementation {
       used = s->lastByteWritten - s->lastByteAcked;
       if (used >= SEND_BUF_SIZE) {
          // No space in send buffer
-         dbg(TRANSPORT_CHANNEL, "write: fd=%hhu no space (used=%lu)\n", fd, (unsigned long)used);
+         // dbg(TRANSPORT_CHANNEL, "write: fd=%hhu no space (used=%lu)\n", fd, (unsigned long)used);
          return 0;
       }
 
@@ -1467,7 +1467,7 @@ implementation {
       uint16_t advWindow;
       socket_t fd;
       
-      dbg(TRANSPORT_CHANNEL, "Transport.receive called, protocol=%d\n", package->protocol);
+      // dbg(TRANSPORT_CHANNEL, "Transport.receive called, protocol=%d\n", package->protocol);
       
       if (package->protocol != PROTOCOL_TCP) {
          return FAIL;
@@ -1494,12 +1494,12 @@ implementation {
       fd = findSocketBy4Tuple(dstAddr, dstPort, srcAddr, srcPort);
       
       if (fd != NULL_SOCKET) {
-         dbg(TRANSPORT_CHANNEL, "RX TCP for socket %hhu state=%hhu (local %hu:%hu, remote %hu:%hu) seq=%lu dataLen=%hhu\n", 
-             fd, sockets[fd].state, dstAddr, dstPort, srcAddr, srcPort, (unsigned long)seq, dataLen);
+         // dbg(TRANSPORT_CHANNEL, "RX TCP for socket %hhu state=%hhu (local %hu:%hu, remote %hu:%hu) seq=%lu dataLen=%hhu\n", 
+            //  fd, sockets[fd].state, dstAddr, dstPort, srcAddr, srcPort, (unsigned long)seq, dataLen);
          handleSegmentForSocket(fd, seg, dataLen);
       } else {
-         dbg(TRANSPORT_CHANNEL, "RX TCP with no matching socket (local %hu:%hu, remote %hu:%hu) flags=%hhu\n",
-             dstAddr, dstPort, srcAddr, srcPort, flags);
+         // dbg(TRANSPORT_CHANNEL, "RX TCP with no matching socket (local %hu:%hu, remote %hu:%hu) flags=%hhu\n",
+            //  dstAddr, dstPort, srcAddr, srcPort, flags);
          if (flags & TCP_FLAG_SYN) {
             socket_t listenFd = findListeningSocketByPort(dstPort);
             
@@ -1532,17 +1532,17 @@ implementation {
                          srcAddr, srcPort, newFd);
                   } else {
                      freeSocket(newFd);
-                     dbg(TRANSPORT_CHANNEL, "Failed to send SYN+ACK, freeing socket %hhu\n", newFd);
+                     // dbg(TRANSPORT_CHANNEL, "Failed to send SYN+ACK, freeing socket %hhu\n", newFd);
                   }
                } else {
-                  dbg(TRANSPORT_CHANNEL, "No free socket available for new connection\n");
+                  // dbg(TRANSPORT_CHANNEL, "No free socket available for new connection\n");
                }
             } else {
-               dbg(TRANSPORT_CHANNEL, "SYN received but no listening socket on port %hu\n", dstPort);
+               // dbg(TRANSPORT_CHANNEL, "SYN received but no listening socket on port %hu\n", dstPort);
             }
          } else {
-            dbg(TRANSPORT_CHANNEL, "RX TCP with no matching socket (local %hu:%hu, remote %hu:%hu)\n", 
-                dstAddr, dstPort, srcAddr, srcPort);
+            // dbg(TRANSPORT_CHANNEL, "RX TCP with no matching socket (local %hu:%hu, remote %hu:%hu)\n", 
+               //  dstAddr, dstPort, srcAddr, srcPort);
          }
       }
       
@@ -1562,7 +1562,7 @@ implementation {
 
       switch (s->state) {
          case TCP_STATE_ESTABLISHED:
-            dbg(TRANSPORT_CHANNEL, "close(): active close fd=%hhu\n", fd);
+            // dbg(TRANSPORT_CHANNEL, "close(): active close fd=%hhu\n", fd);
             trySendData(fd);
             if (sendFin(fd) == SUCCESS) {
                s->state = TCP_STATE_FIN_WAIT_1;
@@ -1572,7 +1572,7 @@ implementation {
             return FAIL;
 
          case TCP_STATE_CLOSE_WAIT:
-            dbg(TRANSPORT_CHANNEL, "close(): passive close fd=%hhu\n", fd);
+            // dbg(TRANSPORT_CHANNEL, "close(): passive close fd=%hhu\n", fd);
             if (sendFin(fd) == SUCCESS) {
                s->state = TCP_STATE_LAST_ACK;
                return SUCCESS;
@@ -1581,7 +1581,7 @@ implementation {
             return FAIL;
 
          default:
-            dbg(TRANSPORT_CHANNEL, "close(): hard close fd=%hhu state=%hhu\n", fd, s->state);
+            // dbg(TRANSPORT_CHANNEL, "close(): hard close fd=%hhu state=%hhu\n", fd, s->state);
             freeSocket(fd);
             return SUCCESS;
       }
@@ -1595,7 +1595,7 @@ implementation {
 
    // Testing TCP infra
    event void Boot.booted() {
-      dbg(TRANSPORT_CHANNEL, "Transport booted\n");
+      // dbg(TRANSPORT_CHANNEL, "Transport booted\n");
       initRetransQueue();
       call TestTimer.startOneShot(10000);  // 10 seconds to let routing converge
    }
@@ -1622,7 +1622,7 @@ implementation {
          if (ts->state == TCP_STATE_TIME_WAIT &&
              ts->timeWaitStart > 0 &&
              (now - ts->timeWaitStart) >= TCP_TIME_WAIT) {
-            dbg(TRANSPORT_CHANNEL, "TIME_WAIT expired: fd=%hhu closing\n", i);
+            // dbg(TRANSPORT_CHANNEL, "TIME_WAIT expired: fd=%hhu closing\n", i);
             freeSocket(i);
          }
       }
@@ -1683,8 +1683,8 @@ implementation {
          return;
       }
 
-      dbg(TRANSPORT_CHANNEL, "Timeout on fd=%hhu seqStart=%lu, retransmitting unACKed data\n",
-          entry->fd, (unsigned long)entry->seqStart);
+      // dbg(TRANSPORT_CHANNEL, "Timeout on fd=%hhu seqStart=%lu, retransmitting unACKed data\n",
+         //  entry->fd, (unsigned long)entry->seqStart);
 
       // Tahoe-style multiplicative decrease on congestion window for this timeout
       if (s->cwnd > TCP_MSS) {
@@ -1695,8 +1695,8 @@ implementation {
          s->ssthresh = newSsthresh;
       }
       s->cwnd = TCP_MSS;
-      dbg(TRANSPORT_CHANNEL, "CC: timeout fd=%hhu, ssthresh=%hu, cwnd reset to %hu\n",
-          entry->fd, s->ssthresh, s->cwnd);
+      // dbg(TRANSPORT_CHANNEL, "CC: timeout fd=%hhu, ssthresh=%hu, cwnd reset to %hu\n",
+         //  entry->fd, s->ssthresh, s->cwnd);
 
       // Go-Back-N: reset send pointer to last ACKed byte
       s->lastByteSent = s->lastByteAcked;
@@ -1712,7 +1712,7 @@ implementation {
    }
    
    event void TestTimer.fired() {
-      dbg(TRANSPORT_CHANNEL, "Timer fired, calling sendSegment\n");
+      // dbg(TRANSPORT_CHANNEL, "Timer fired, calling sendSegment\n");
       sendSegment(2, 1234, 5678, 0, 0, TCP_FLAG_SYN, 100, NULL, 0);
    }
 }
