@@ -1,7 +1,3 @@
-/*
- * ANDES Lab - University of California, Merced
- *
- */
 #include <Timer.h>
 #include "includes/command.h"
 #include "includes/packet.h"
@@ -32,6 +28,10 @@ module Node{
    uses interface Flooding as Flood;       // Flooding - Project 1
    uses interface LinkState as LS;         // Link-State Routing - Project 2
    uses interface Transport;               // TCP - Project 3
+   
+   // Project 4: Chat
+   uses interface ChatClient;
+   uses interface ChatServer;
 }
 
 implementation {
@@ -72,6 +72,11 @@ implementation {
       call AMControl.start();
 
       // dbg(GENERAL_CHANNEL, "Node %d booted; starting protocols\n", TOS_NODE_ID);  // Show node boot message
+      
+      // Project 4: Start chat server on node 1
+      if (TOS_NODE_ID == 1) {
+         call ChatServer.start();
+      }
    }
 
    event void AMControl.startDone(error_t err){
@@ -300,9 +305,6 @@ implementation {
                   }
                   dbg("Project3TGen", "\n");
                }
-               // Clean up closed connections (read returns 0 and socket is no longer ESTABLISHED)
-               // Note: Transport.read already validates state, so if it returns 0 consistently,
-               // the connection may be closing. We'll rely on the transport layer to handle cleanup.
             }
       }
    }
@@ -437,6 +439,24 @@ implementation {
    }
    event void Cmd.setAppServer(){}
    event void Cmd.setAppClient(){}
+
+   // Chat command handlers for p4
+   
+   event void Cmd.chatHello(char *username, uint16_t clientPort) {
+      call ChatClient.startHello(username, clientPort);
+   }
+   
+   event void Cmd.chatMsg(char *msg) {
+      call ChatClient.sendMsg(msg);
+   }
+   
+   event void Cmd.chatWhisper(char *username, char *msg) {
+      call ChatClient.sendWhisper(username, msg);
+   }
+   
+   event void Cmd.chatListUsr() {
+      call ChatClient.sendListUsr();
+   }
 
    // Create packets
    void makePack(pack *Package, uint16_t src, uint16_t dest, uint16_t TTL, uint16_t protocol, uint16_t seq, uint8_t* payload, uint8_t length){

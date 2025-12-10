@@ -1,11 +1,3 @@
-/**
- * ANDES Lab - University of California, Merced
- *
- * @author UCM ANDES Lab
- * @date   2013/09/03
- *
- */
-
 #include <Timer.h>
 #include "includes/CommandMsg.h"
 #include "includes/packet.h"
@@ -57,4 +49,12 @@ implementation {
     components TransportC;
     TransportC.LinkState -> LinkStateC.LinkState;
     Node.Transport -> TransportC;
+    
+    // Chat module
+    components ChatClientC;
+    components ChatServerC;
+    Node.ChatClient -> ChatClientC;
+    ChatClientC.Transport -> TransportC;
+    Node.ChatServer -> ChatServerC;
+    ChatServerC.Transport -> TransportC;
 }

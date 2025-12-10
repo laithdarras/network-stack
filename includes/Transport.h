@@ -1,4 +1,3 @@
-//Author: UCM ANDES Lab
 //Transport layer header definitions for TCP-like protocol
 
 #ifndef TRANSPORT_H
@@ -39,6 +38,4 @@ typedef nx_struct tcp_segment_t {
 #ifndef TCP_MSS
 #define TCP_MSS (PACKET_MAX_PAYLOAD_SIZE - sizeof(tcp_header_t))
 #endif
-
-#endif /* TRANSPORT_H */
-
+#endif

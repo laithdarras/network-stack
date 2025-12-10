@@ -101,8 +101,6 @@ implementation {
       uint16_t idx = 0;
       uint8_t i;
 
-      dbg(PROJECT4_CHAT_CHANNEL, "ChatServer broadcast from %s: %s\n", sender, msg);
-
       idx = appendStr(outBuf, idx, "msgFrom ", sizeof(outBuf));
       idx = appendStr(outBuf, idx, sender, sizeof(outBuf));
       idx = appendChar(outBuf, idx, ' ', sizeof(outBuf));
@@ -124,7 +122,6 @@ implementation {
       {
          char outBuf[LINE_BUF_SIZE];
          uint16_t idx = 0;
-         dbg(PROJECT4_CHAT_CHANNEL, "ChatServer whisper %s -> %s: %s\n", sender, target, msg);
          idx = appendStr(outBuf, idx, "whisperFrom ", sizeof(outBuf));
          idx = appendStr(outBuf, idx, sender, sizeof(outBuf));
          idx = appendChar(outBuf, idx, ' ', sizeof(outBuf));
@@ -151,6 +148,8 @@ implementation {
       }
 
       finalizeCrlf(outBuf, idx, sizeof(outBuf));
+      dbg(PROJECT4_CHAT_CHANNEL, "ChatServer listUsrRply to %s: %s\n",
+          (c->username[0] != '\0') ? c->username : "<nouser>", outBuf);
       sendToClient(c->fd, outBuf);
    }
 
@@ -208,7 +207,6 @@ implementation {
       if (n == 0) {
          return;
       }
-      dbg(PROJECT4_CHAT_CHANNEL, "ChatServer read fd=%hhu n=%hu\n", c->fd, n);
 
       // Append to line buffer
       if (c->lineLen + n >= LINE_BUF_SIZE) {
@@ -226,19 +224,23 @@ implementation {
          c->lineBuf[c->lineLen] = '\0';
       }
 
-      // Extract complete lines terminated by \r\n
+      // Extract complete lines terminated by \r\n or lone \r/\n
       while (1) {
          uint8_t i;
          bool found = FALSE;
          for (i = 0; i + 1 < c->lineLen; i++) {
-            if (c->lineBuf[i] == '\r' && c->lineBuf[i + 1] == '\n') {
+            if (c->lineBuf[i] == '\r' || c->lineBuf[i] == '\n') {
+               uint8_t consume = 1;
+               if (c->lineBuf[i] == '\r' && (i + 1 < c->lineLen) && c->lineBuf[i + 1] == '\n') {
+                  consume = 2;
+               }
                c->lineBuf[i] = '\0';
                processLine(c, c->lineBuf);
                // shift remaining
                {
-                  uint8_t remaining = c->lineLen - (i + 2);
+                  uint8_t remaining = c->lineLen - (i + consume);
                   if (remaining > 0) {
-                     memmove(c->lineBuf, &c->lineBuf[i + 2], remaining);
+                     memmove(c->lineBuf, &c->lineBuf[i + consume], remaining);
                   }
                   c->lineLen = remaining;
                   c->lineBuf[c->lineLen] = '\0';

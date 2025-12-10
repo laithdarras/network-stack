@@ -1,7 +1,3 @@
-#ANDES Lab - University of California, Merced
-#Author: UCM ANDES Lab
-#$Author: abeltran2 $
-#$LastChangedDate: 2014-08-31 16:06:26 -0700 (Sun, 31 Aug 2014) $
 #! /usr/bin/python
 import sys
 from TOSSIM import *
@@ -17,6 +13,10 @@ class TestSim:
     CMD_TEST_SERVER = 5
     CMD_KILL = 6
     CMD_CLOSE = 7
+    CMD_CHAT_HELLO = 10
+    CMD_CHAT_MSG = 11
+    CMD_CHAT_WHISPER = 12
+    CMD_CHAT_LISTUSR = 13
 
     # CHANNELS - see includes/channels.h
     COMMAND_CHANNEL="command"
@@ -32,6 +32,9 @@ class TestSim:
     # Project 3
     TRANSPORT_CHANNEL="transport"
     PROJECT3_TGEN_CHANNEL="Project3TGen"
+
+    # Project 4
+    PROJECT4_CHAT_CHANNEL="Project4Chat"
 
     # Personal Debuggin Channels for some of the additional models implemented.
     HASHMAP_CHANNEL="hashmap"
@@ -149,6 +152,26 @@ class TestSim:
         payload = self.buildPayload([client_addr, dest_addr, src_port, dest_port])
         self.sendCMD(self.CMD_CLOSE, client_addr, payload)
 
+    # Chat helper functions
+    def padUsername(self, name):
+        n = name[:12]
+        return n + ("\x00" * (12 - len(n)))
+
+    def chatHello(self, client_addr, username, clientPort):
+        uname = self.padUsername(username)
+        payload = uname + chr((clientPort >> 8) & 0xFF) + chr(clientPort & 0xFF)
+        self.sendCMD(self.CMD_CHAT_HELLO, client_addr, payload)
+
+    def chatMsg(self, client_addr, msg):
+        self.sendCMD(self.CMD_CHAT_MSG, client_addr, msg[:25])
+
+    def chatWhisper(self, client_addr, target_user, msg):
+        uname = self.padUsername(target_user)
+        self.sendCMD(self.CMD_CHAT_WHISPER, client_addr, uname + msg[:13])
+
+    def chatListUsr(self, client_addr):
+        self.sendCMD(self.CMD_CHAT_LISTUSR, client_addr, "")
+
     # Convenience wrappers used by testA/testB
     def testServer(self, address):
         # Use default port 123 for server tests
@@ -173,33 +196,35 @@ def main():
     s.loadTopo("long_line.topo")
     s.loadNoise("no_noise.txt")
     s.bootAll()
-    s.addChannel(s.COMMAND_CHANNEL) # This channel is used to send commands to the nodes
-    # s.addChannel(s.GENERAL_CHANNEL) # This channel includes ALL messages
-    s.addChannel(s.FLOODING_CHANNEL)  # This channel is used for flooding messages only
-    s.addChannel(s.NEIGHBOR_CHANNEL)   # This channel is used for neighbor discovery messages only
-    s.addChannel(s.PROJECT3_TGEN_CHANNEL)
 
-    s.runTime(20)
-    s.ping(1, 2, "Hello, World")
-    s.runTime(10)
-    s.ping(1, 3, "Hi!")
-    s.runTime(20)
+    # s.addChannel(s.COMMAND_CHANNEL)
+    # s.addChannel(s.GENERAL_CHANNEL)
+    # s.addChannel(s.FLOODING_CHANNEL)
+    # s.addChannel(s.NEIGHBOR_CHANNEL)
+    # s.addChannel(s.PROJECT3_TGEN_CHANNEL)
+    s.addChannel(s.PROJECT4_CHAT_CHANNEL)
 
-    # Project 1 Testing
-    s.neighborDMP(5)
-    s.runTime(3)
+    # Allow routing to settle
+    s.runTime(800)
 
-    s.ping(3, 15, "Test 1")
-    s.runTime(60)
+    # two clients (2=alice, 3=bob) to server node 1 port 41
+    s.chatHello(2, "alice", 2002)
+    s.runTime(400)
+    s.chatHello(3, "bob", 2003)
+    s.runTime(800)
 
-    s.moteOff(5)
-    s.runTime(30)
+    # Early listusr to verify early in the session
+    s.chatListUsr(2)
+    s.runTime(800)
 
-    s.ping(4, 7, "Test 2")
-    s.runTime(60)
+    s.chatMsg(2, "hi-all")
+    s.runTime(800)
 
-    s.neighborDMP(6)
-    s.runTime(30)
+    s.chatWhisper(3, "alice", "hi-alice")
+    s.runTime(800)
+
+    s.chatListUsr(2)
+    s.runTime(2000)
 
 
 if __name__ == '__main__':

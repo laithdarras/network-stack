@@ -1,5 +1,5 @@
 interface CommandHandler{
-   // Events
+   // events
    event void ping(uint16_t destination, uint8_t *payload);
    event void printNeighbors();
    event void printRouteTable();
@@ -10,8 +10,12 @@ interface CommandHandler{
    event void setTestClose();
    event void setAppServer();
    event void setAppClient();
+   event void chatHello(char *username, uint16_t clientPort);
+   event void chatMsg(char *msg);
+   event void chatWhisper(char *username, char *msg);
+   event void chatListUsr();
 
-   // p3 accessories
+   // accessories
    command uint16_t getTestServerAddress();
    command uint16_t getTestServerPort();
 

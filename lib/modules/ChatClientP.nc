@@ -55,7 +55,11 @@ implementation {
    }
 
    void processLine(char *line) {
-      dbg(PROJECT4_CHAT_CHANNEL, "ChatClient recv: %s\n", line);
+      if (strncmp(line, "listUsrRply ", 12) == 0) {
+         dbg(PROJECT4_CHAT_CHANNEL, "ChatClient listUsrRply: %s\n", line + 12);
+      } else {
+         dbg(PROJECT4_CHAT_CHANNEL, "ChatClient recv: %s\n", line);
+      }
    }
 
 

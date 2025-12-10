@@ -9,6 +9,7 @@
 #include "../../includes/CommandMsg.h"
 #include "../../includes/command.h"
 #include "../../includes/channels.h"
+#include "../../includes/socket.h"
 
 module CommandHandlerP{
    provides interface CommandHandler;
@@ -110,6 +111,52 @@ implementation{
                 testCloseSrcPort = readUint16(&buff[4]);
                 testCloseDestPort = readUint16(&buff[6]);
                 signal CommandHandler.setTestClose();
+                break;
+
+            case CMD_CHAT_HELLO: {
+                cmd_chat_hello_t *hello = (cmd_chat_hello_t *)buff;
+                char username[CMD_CHAT_USERNAME_MAX + 1];
+                uint16_t clientPort;
+                uint8_t i;
+                for (i = 0; i < CMD_CHAT_USERNAME_MAX && hello->username[i] != 0; i++) {
+                    username[i] = hello->username[i];
+                }
+                username[i] = '\0';
+                clientPort = readUint16((uint8_t *)&hello->clientPort);
+                signal CommandHandler.chatHello(username, clientPort);
+                break;
+            }
+
+            case CMD_CHAT_MSG: {
+                char chatMsg[CMD_CHAT_MSG_MAX + 1];
+                uint8_t i;
+                for (i = 0; i < CMD_CHAT_MSG_MAX && buff[i] != 0; i++) {
+                    chatMsg[i] = buff[i];
+                }
+                chatMsg[i] = '\0';
+                signal CommandHandler.chatMsg(chatMsg);
+                break;
+            }
+
+            case CMD_CHAT_WHISPER: {
+                cmd_chat_whisper_t *whisper = (cmd_chat_whisper_t *)buff;
+                char username[CMD_CHAT_USERNAME_MAX + 1];
+                char whisperMsg[CMD_CHAT_WHISPER_MSG_MAX + 1];
+                uint8_t i;
+                for (i = 0; i < CMD_CHAT_USERNAME_MAX && whisper->username[i] != 0; i++) {
+                    username[i] = whisper->username[i];
+                }
+                username[i] = '\0';
+                for (i = 0; i < CMD_CHAT_WHISPER_MSG_MAX && whisper->msg[i] != 0; i++) {
+                    whisperMsg[i] = whisper->msg[i];
+                }
+                whisperMsg[i] = '\0';
+                signal CommandHandler.chatWhisper(username, whisperMsg);
+                break;
+            }
+
+            case CMD_CHAT_LISTUSR:
+                signal CommandHandler.chatListUsr();
                 break;
 
             default:
