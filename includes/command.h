@@ -3,7 +3,7 @@
 
 #include "CommandMsg.h"
  
-//Command ID Number
+// Command ID Number
 enum{
 	CMD_PING = 0,
 	CMD_NEIGHBOR_DUMP=1,

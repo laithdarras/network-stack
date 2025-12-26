@@ -24,7 +24,7 @@ enum socket_state{
 typedef nx_uint8_t nx_socket_port_t;
 typedef uint8_t socket_port_t;
 
-// socket_addr_t is a simplified version of an IP connection.
+// This is a simplified version of an IP connection
 typedef nx_struct socket_addr_t{
     nx_socket_port_t port;
     nx_uint16_t addr;

@@ -1,4 +1,4 @@
-//Transport layer header definitions for TCP-like protocol
+// Transport layer header definitions for TCP-like protocol
 
 #ifndef TRANSPORT_H
 #define TRANSPORT_H
@@ -34,7 +34,7 @@ typedef nx_struct tcp_segment_t {
    nx_uint8_t   data[TCP_MAX_DATA];
 } tcp_segment_t;
 
-// TCP maximum segment size (MSS) based on packet payload and header size
+// MSS based on packet payload and header size
 #ifndef TCP_MSS
 #define TCP_MSS (PACKET_MAX_PAYLOAD_SIZE - sizeof(tcp_header_t))
 #endif

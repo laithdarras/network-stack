@@ -21,12 +21,7 @@ typedef nx_struct pack{
 	nx_uint8_t payload[PACKET_MAX_PAYLOAD_SIZE];
 }pack;
 
-/*
- * logPack
- * 	Sends packet information to the general channel.
- * @param:
- * 		pack *input = pack to be printed.
- */
+// Sends packet information to the general channel
 void logPack(pack *input){
 	dbg(GENERAL_CHANNEL, "Src: %hhu Dest: %hhu Seq: %hhu TTL: %hhu Protocol:%hhu  Payload: %s\n",
 	input->src, input->dest, input->seq, input->TTL, input->protocol, input->payload);

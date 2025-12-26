@@ -1,6 +1,3 @@
-//Author: UCM ANDES Lab
-//$Author: abeltran2 $
-//$LastChangedBy: abeltran2 $
 
 #ifndef __COMMAND_MSG_H__
 #define __COMMAND_MSG_H__
