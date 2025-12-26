@@ -1,8 +1,8 @@
-# Project 4: Chat Client and Server
+# Chat Client and Server
 
 ## Introduction
 
-Build a simple text chat (client/server) on top of the Project 3 reliable transport. Server runs on node 1, port 41. Clients issue CRLF-terminated commands (hello, msg, whisper, listusr) and receive formatted replies.
+Build a simple text chat (client/server) on top of reliable transport. Server runs on node 1, port 41. Clients issue CRLF-terminated commands (hello, msg, whisper, listusr) and receive formatted replies.
 
 ## Architecture
 

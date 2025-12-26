@@ -1,8 +1,8 @@
-# Project 3: Reliable Transport and Congestion Control
+# Reliable Transport and Congestion Control
 
 ## 1. Introduction
 
-This project implements a TCP-like reliable transport layer on TinyOS/TOSSIM, building on Projects 1-2 (ND, Flooding, Link-State routing). The transport layer adds reliability, flow control, and congestion control on top of best-effort packet delivery.
+This stack implements a TCP-like reliable transport layer on TinyOS/TOSSIM, building on the previous stacks implemented. The transport layer adds reliability, flow control, and congestion control on top of best-effort packet delivery.
 
 **Features**: 3-way handshake, Go-Back-N sliding window, retransmission timers, flow control via advertised windows, TCP Tahoe-style congestion control (slow start + AIMD), FIN teardown, multiple concurrent connections.
 
