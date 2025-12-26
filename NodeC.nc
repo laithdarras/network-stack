@@ -7,7 +7,7 @@ configuration NodeC{
 implementation {
     components MainC;
     components Node;
-    components new AMReceiverC(AM_PACK) as GeneralReceive; // debug receive path
+    components new AMReceiverC(AM_PACK) as GeneralReceive;
 
     Node -> MainC.Boot;
 
@@ -45,12 +45,12 @@ implementation {
     Node.LS -> LinkStateC.LinkState;
     LinkStateC.NeighborDiscovery -> NeighborDiscoveryC.NeighborDiscovery;
 
-    // TCP module
+    // Transport module
     components TransportC;
     TransportC.LinkState -> LinkStateC.LinkState;
     Node.Transport -> TransportC;
     
-    // Chat module
+    // Chat/Server module
     components ChatClientC;
     components ChatServerC;
     Node.ChatClient -> ChatClientC;

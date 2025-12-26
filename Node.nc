@@ -19,17 +19,17 @@ module Node{
 
    uses interface CommandHandler as Cmd;    // TinyOS Simulator Command Interface Service
 
-   uses interface NeighborDiscovery as ND; // Neighbor Discover - Project 1
+   uses interface NeighborDiscovery as ND;
 
    uses interface Timer<TMilli> as NDTimer;  // Timer for ND module
    uses interface Timer<TMilli> as ServerTimer;
    uses interface Timer<TMilli> as ClientTimer;
 
-   uses interface Flooding as Flood;       // Flooding - Project 1
-   uses interface LinkState as LS;         // Link-State Routing - Project 2
-   uses interface Transport;               // TCP - Project 3
+   uses interface Flooding as Flood;
+   uses interface LinkState as LS;
+   uses interface Transport;
    
-   // Project 4: Chat
+   // Chat application
    uses interface ChatClient;
    uses interface ChatServer;
 }
@@ -38,7 +38,7 @@ implementation {
    pack sendPackage;          
    uint16_t floodSeq = 0;
 
-   // Project 3 testing globals
+   // Transport testing globals
    enum { MAX_SERVER_CONNECTIONS = 8 };
    socket_t serverFd = NULL_SOCKET;
    socket_t serverAccepted[MAX_SERVER_CONNECTIONS];
@@ -70,10 +70,8 @@ implementation {
       serverFd = NULL_SOCKET;
       clientFd = NULL_SOCKET;
       call AMControl.start();
-
-      // dbg(GENERAL_CHANNEL, "Node %d booted; starting protocols\n", TOS_NODE_ID);  // Show node boot message
       
-      // Project 4: Start chat server on node 1
+      // Start chat server on node 1
       if (TOS_NODE_ID == 1) {
          call ChatServer.start();
       }
@@ -81,7 +79,6 @@ implementation {
 
    event void AMControl.startDone(error_t err){
       if(err == SUCCESS){
-         // dbg(GENERAL_CHANNEL, "Radio On - starting ND and Flooding\n");   // Show radio message
          call ND.start();
          call Flood.start();
          call LS.start();
@@ -97,13 +94,12 @@ implementation {
    event message_t* Receive.receive(message_t* msg, void* payload, uint8_t len){
       pack* myMsg = (pack*) payload;
       uint16_t inbound = call AMPacket.source(msg);
-      // dbg(GENERAL_CHANNEL, "RX len=%d proto=%d from=%d\n", len, myMsg->protocol, inbound);
 
       if(myMsg->protocol == 1 || myMsg->protocol == 2) {    // ND REQ/ND REP
          call ND.onReceive(myMsg, inbound);
       } else if(myMsg->protocol == 3) {               // FLOOD
          call Flood.onReceive(myMsg, inbound);
-      } else if(myMsg->protocol == PROTOCOL_TCP) {   // TCP (check before Link-State since both use protocol 4)
+      } else if(myMsg->protocol == PROTOCOL_TCP) {   // TCP
             if(myMsg->dest == TOS_NODE_ID) {
                // Deliver to transport layer
                call Transport.receive(myMsg);
@@ -114,7 +110,7 @@ implementation {
                   call SS.send(*myMsg, next_hop);
                }
             }
-      } else if(myMsg->protocol == 4) {               // Link-State (legacy handling)
+      } else if(myMsg->protocol == 4) {               // Link-State
          call Flood.onReceive(myMsg, inbound);
       } else {
          // Regular data packet - route or deliver
@@ -129,12 +125,12 @@ implementation {
             uint16_t nh = call LS.nextHop(myMsg->dest);
             if (nh != 0xFFFF) {
                if (call SS.send(*myMsg, nh) == SUCCESS) {
-                  // dbg(GENERAL_CHANNEL, "Routed packet dest=%d via nextHop=%d\n", myMsg->dest, nh);
+                  dbg(GENERAL_CHANNEL, "Routed packet dest=%d via nextHop=%d\n", myMsg->dest, nh);
                } else {
-                  // dbg(GENERAL_CHANNEL, "Route failed for dest=%d\n", myMsg->dest);
+                  dbg(GENERAL_CHANNEL, "Route failed for dest=%d\n", myMsg->dest);
                }
             } else {
-               // dbg(GENERAL_CHANNEL, "No route to dest=%d, dropping\n", myMsg->dest);
+               dbg(GENERAL_CHANNEL, "No route to dest=%d, dropping\n", myMsg->dest);
             }
          }
       }
@@ -143,7 +139,6 @@ implementation {
 
    // Timer for periodic operations
    event void NDTimer.fired(){
-      // dbg(GENERAL_CHANNEL, "Node %d periodic timer\n", TOS_NODE_ID);
       call NDTimer.startOneShot(5000);  // 5 second intervals
    }
 
@@ -164,19 +159,10 @@ implementation {
             }
          }
       }
-   // this needs to be more efficient approach using ip instead of flooding every time which is costly.
-      // Fallback: flood
-      if(call Flood.send(sendPackage, destination) == SUCCESS) {
-         dbg(GENERAL_CHANNEL, "Ping sent via flooding seq=%d\n", sendPackage.seq);
-      } else {
-         dbg(GENERAL_CHANNEL, "Ping send failed\n");
-      }
    }
 
    // Handle flood receive events
    event void Flood.receive(pack msg, uint16_t from) {
-      // dbg(GENERAL_CHANNEL, "Flood received: src=%d seq=%d from=%d TTL=%d\n", 
-      //      msg.src, msg.seq, from, msg.TTL);
       if(msg.dest == TOS_NODE_ID) {
          dbg(GENERAL_CHANNEL, "Ping received from %d\n", msg.src);
       }
@@ -186,9 +172,7 @@ implementation {
       call ND.printNeighbors();
    }
 
-   // Project 2
    event void Cmd.printRouteTable(){
-      // dbg(COMMAND_CHANNEL, "Cmd: printRouteTable\n");
       // Print LSAs first, then routing table
       call LS.printLinkStateDB();
       call LS.printRouteTable();
@@ -207,13 +191,13 @@ implementation {
       uint16_t targetPort = call Cmd.getTestServerPort();
 
       if (targetAddr != 0 && targetAddr != TOS_NODE_ID) {
-         dbg("Project3TGen", "setTestServer: command for node %hu ignored on %hu\n",
+         dbg("TransportTest", "setTestServer: command for node %hu ignored on %hu\n",
              targetAddr, TOS_NODE_ID);
          return;
       }
 
       if (serverFd != NULL_SOCKET) {
-         dbg("Project3TGen", "setTestServer: server already running on node %hu\n", TOS_NODE_ID);
+         dbg("TransportTest", "setTestServer: server already running on node %hu\n", TOS_NODE_ID);
          return;
       }
 
@@ -224,7 +208,7 @@ implementation {
 
       serverFd = call Transport.socket();
       if (serverFd == NULL_SOCKET) {
-         dbg("Project3TGen", "setTestServer: socket alloc failed on node %hu\n", TOS_NODE_ID);
+         dbg("TransportTest", "setTestServer: socket alloc failed on node %hu\n", TOS_NODE_ID);
          return;
       }
 
@@ -233,7 +217,7 @@ implementation {
 
       err = call Transport.bind(serverFd, &addr);
       if (err != SUCCESS) {
-         dbg("Project3TGen", "setTestServer: bind failed on node %hu port=%hu\n", TOS_NODE_ID, serverPort);
+         dbg("TransportTest", "setTestServer: bind failed on node %hu port=%hu\n", TOS_NODE_ID, serverPort);
          call Transport.close(serverFd);
          serverFd = NULL_SOCKET;
          return;
@@ -241,7 +225,7 @@ implementation {
 
       err = call Transport.listen(serverFd);
       if (err != SUCCESS) {
-         dbg("Project3TGen", "setTestServer: listen failed on node %hu port=%hu\n", TOS_NODE_ID, serverPort);
+         dbg("TransportTest", "setTestServer: listen failed on node %hu port=%hu\n", TOS_NODE_ID, serverPort);
          call Transport.close(serverFd);
          serverFd = NULL_SOCKET;
          return;
@@ -249,7 +233,7 @@ implementation {
 
       resetServerConnections();
 
-      dbg("Project3TGen", "Server started node=%hu port=%hu\n", TOS_NODE_ID, serverPort);
+      dbg("TransportTest", "Server started node=%hu port=%hu\n", TOS_NODE_ID, serverPort);
       call ServerTimer.startPeriodic(500);
    }
 
@@ -267,7 +251,7 @@ implementation {
       while (TRUE) {
          newFd = call Transport.accept(serverFd);
          if (newFd == NULL_SOCKET) {
-            break;  // No more pending connections
+            break;
          }
          
          stored = FALSE;
@@ -275,14 +259,14 @@ implementation {
             if (serverAccepted[i] == NULL_SOCKET) {
                serverAccepted[i] = newFd;
                stored = TRUE;
-               dbg("Project3TGen", "accept(): node=%hu accepted fd=%hhu\n", TOS_NODE_ID, newFd);
+               dbg("TransportTest", "accept(): node=%hu accepted fd=%hhu\n", TOS_NODE_ID, newFd);
                break;
             }
          }
          if (!stored) {
-            dbg("Project3TGen", "accept(): connection limit reached on node %hu\n", TOS_NODE_ID);
+            dbg("TransportTest", "accept(): connection limit reached on node %hu\n", TOS_NODE_ID);
             call Transport.close(newFd);
-            break;  // Don't try to accept more if we're at the limit
+            break;
          }
       }
 
@@ -295,15 +279,15 @@ implementation {
                uint16_t n = call Transport.read(fd, serverReadBuf, sizeof(serverReadBuf));
                if (n > 1) {
                   uint16_t idx = 0;
-                  dbg("Project3TGen", "Reading Data (fd=%hhu):", fd);
+                  dbg("TransportTest", "Reading Data (fd=%hhu):", fd);
                   while (idx + 1 < n) {
                      uint16_t value =
                         ((uint16_t)serverReadBuf[idx] << 8) |
                         ((uint16_t)serverReadBuf[idx + 1]);
-                     dbg("Project3TGen", "%hu,", value);
+                     dbg("TransportTest", "%hu,", value);
                      idx += 2;
                   }
-                  dbg("Project3TGen", "\n");
+                  dbg("TransportTest", "\n");
                }
             }
       }
@@ -315,13 +299,13 @@ implementation {
       uint16_t targetAddr = call Cmd.getTestClientAddress();
 
       if (targetAddr != 0 && targetAddr != TOS_NODE_ID) {
-         dbg("Project3TGen", "setTestClient: command for node %hu ignored on %hu\n",
+         dbg("TransportTest", "setTestClient: command for node %hu ignored on %hu\n",
              targetAddr, TOS_NODE_ID);
          return;
       }
 
       if (clientFd != NULL_SOCKET) {
-         dbg("Project3TGen", "setTestClient: client already active on node %hu\n", TOS_NODE_ID);
+         dbg("TransportTest", "setTestClient: client already active on node %hu\n", TOS_NODE_ID);
          return;
       }
 
@@ -331,13 +315,13 @@ implementation {
       clientTransferLimit = call Cmd.getTestClientTransfer();
 
       if (clientDestAddr == 0 || clientSrcPort == 0 || clientDestPort == 0) {
-         dbg("Project3TGen", "setTestClient: missing parameters on node %hu\n", TOS_NODE_ID);
+         dbg("TransportTest", "setTestClient: missing parameters on node %hu\n", TOS_NODE_ID);
          return;
       }
 
       clientFd = call Transport.socket();
       if (clientFd == NULL_SOCKET) {
-         dbg("Project3TGen", "setTestClient: socket alloc failed on node %hu\n", TOS_NODE_ID);
+         dbg("TransportTest", "setTestClient: socket alloc failed on node %hu\n", TOS_NODE_ID);
          return;
       }
 
@@ -345,7 +329,7 @@ implementation {
       addr.port = clientSrcPort;
       err = call Transport.bind(clientFd, &addr);
       if (err != SUCCESS) {
-         dbg("Project3TGen", "setTestClient: bind failed node=%hu port=%hu\n", TOS_NODE_ID, clientSrcPort);
+         dbg("TransportTest", "setTestClient: bind failed node=%hu port=%hu\n", TOS_NODE_ID, clientSrcPort);
          call Transport.close(clientFd);
          clientFd = NULL_SOCKET;
          return;
@@ -355,7 +339,7 @@ implementation {
       addr.port = clientDestPort;
       err = call Transport.connect(clientFd, &addr);
       if (err != SUCCESS) {
-         dbg("Project3TGen", "setTestClient: connect failed dest=%hu:%hu\n",
+         dbg("TransportTest", "setTestClient: connect failed dest=%hu:%hu\n",
              clientDestAddr, clientDestPort);
          call Transport.close(clientFd);
          clientFd = NULL_SOCKET;
@@ -364,7 +348,7 @@ implementation {
 
       clientNextValue = 0;
       clientActive = TRUE;
-      dbg("Project3TGen", "Client started node=%hu -> %hu:%hu transfer=%hu\n",
+      dbg("TransportTest", "Client started node=%hu -> %hu:%hu transfer=%hu\n",
           TOS_NODE_ID, clientDestAddr, clientDestPort, clientTransferLimit);
       call ClientTimer.startPeriodic(500);
    }
@@ -378,11 +362,6 @@ implementation {
       if (!clientActive || clientFd == NULL_SOCKET) {
           call ClientTimer.stop();
           return;
-      }
-
-      if (clientNextValue > clientTransferLimit) {
-         // Waiting for explicit close command
-         return;
       }
 
       while (valuesPrepared < maxValues && clientNextValue <= clientTransferLimit) {
@@ -400,7 +379,6 @@ implementation {
 
       written = call Transport.write(clientFd, clientWriteBuf, bufLen);
       if (written == 0) {
-         // dbg("Project3TGen", "Client write throttled on node %hu\n", TOS_NODE_ID);
          clientNextValue -= valuesPrepared;
          return;
       }
@@ -413,7 +391,7 @@ implementation {
          }
       }
 
-      dbg("Project3TGen", "Client wrote %hu bytes from node %hu\n", written, TOS_NODE_ID);
+      dbg("TransportTest", "Client wrote %hu bytes from node %hu\n", written, TOS_NODE_ID);
    }
 
    event void Cmd.setTestClose(){
@@ -429,7 +407,7 @@ implementation {
          if (clientDestAddr == dest &&
              clientSrcPort == srcPort &&
              clientDestPort == destPort) {
-            dbg("Project3TGen", "Client closing connection on node %hu\n", TOS_NODE_ID);
+            dbg("TransportTest", "Client closing connection on node %hu\n", TOS_NODE_ID);
             call Transport.close(clientFd);
             clientFd = NULL_SOCKET;
             clientActive = FALSE;
@@ -440,7 +418,7 @@ implementation {
    event void Cmd.setAppServer(){}
    event void Cmd.setAppClient(){}
 
-   // Chat command handlers for p4
+   // Chat command handlers
    
    event void Cmd.chatHello(char *username, uint16_t clientPort) {
       call ChatClient.startHello(username, clientPort);
