@@ -43,7 +43,7 @@ Key concepts implemented:
 - **Dijkstra's Algorithm**: Shortest path computation from each node to all other nodes
 - **Routing Table**: `nextHop[]` and `dist[]` arrays for efficient packet forwarding
 
-**Transport Layer (TCP)**:
+**Transport Layer (TCP-Like Reliable Transport)**:
 
 - **Sequence numbers and ACKs**: Cumulative acknowledgments for reliable delivery
 - **Retransmission timers**: Timeout-based loss detection and recovery
