@@ -205,17 +205,17 @@ def main():
     s.addChannel(s.PROJECT4_CHAT_CHANNEL)
 
     # Allow routing to settle
-    s.runTime(800)
+    s.runTime(8000)
 
     # two clients (2=alice, 3=bob) to server node 1 port 41
     s.chatHello(2, "alice", 2002)
     s.runTime(400)
     s.chatHello(3, "bob", 2003)
-    s.runTime(800)
+    s.runTime(8000)
 
     # Early listusr to verify early in the session
     s.chatListUsr(2)
-    s.runTime(800)
+    s.runTime(8000)
 
     s.chatMsg(2, "hi-all")
     s.runTime(800)
