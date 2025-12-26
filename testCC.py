@@ -10,7 +10,7 @@ def main():
 
     s.addChannel(s.COMMAND_CHANNEL)
     s.addChannel(s.TRANSPORT_CHANNEL)
-    s.addChannel(s.PROJECT3_TGEN_CHANNEL)
+    s.addChannel(s.TRANSPORT_TEST_CHANNEL)
 
     s.runTime(300)
     s.testServer(1)

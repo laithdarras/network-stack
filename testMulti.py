@@ -11,7 +11,7 @@ def main():
     s.addChannel(s.COMMAND_CHANNEL)
     s.addChannel(s.GENERAL_CHANNEL)
     s.addChannel(s.TRANSPORT_CHANNEL)
-    s.addChannel(s.PROJECT3_TGEN_CHANNEL)
+    s.addChannel(s.TRANSPORT_TEST_CHANNEL)
 
     # Let ND/LS converge
     s.runTime(300)

@@ -11,7 +11,7 @@ This stack implements a link-state routing protocol in TinyOS. It reuses Neighbo
 
 ### Design Process
 
-- Started from Project 1’s working ND and Flooding modules and verified they ran under TOSSIM.
+- Started from working ND and Flooding modules and verified they ran under TOSSIM.
 - Integrated a new LinkState component (`LinkStateP.nc`/`LinkStateC.nc`) that depends on ND, Flooding, and a timer.
 - Incremental bring‑up: (1) compile; (2) confirm ND tables; (3) build LSAs and verify flooding; (4) populate LSDB on receive; (5) recompute routes with Dijkstra and validate routing tables; (6) enable forwarding via `nextHop`.
 
@@ -29,7 +29,7 @@ This stack implements a link-state routing protocol in TinyOS. It reuses Neighbo
   - `LSA received from <origin> (seq=<s>)`
   - `LS: LSDB updated for origin=<id> count=<n> (seq=<s>)`
   - `LS: Recomputing routes`
-- Forwarding behavior: pings first consult `LS.nextHop(dest)`; if invalid, fallback to flooding.
+- Forwarding behavior: pings first consult `LS.nextHop(dest)` and if invalid, fallback to flooding.
 
 ### Limitations
 

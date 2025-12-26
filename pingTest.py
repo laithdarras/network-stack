@@ -13,7 +13,7 @@ def main():
     # s.addChannel(s.GENERAL_CHANNEL)
     # s.addChannel(s.ROUTING_CHANNEL)
     # # s.addChannel(s.FLOODING_CHANNEL)
-    s.addChannel("Project 3 - TCP")
+    s.addChannel("Transport")
 
     # Run long enough for TCP timer to fire (5 seconds) and routing to converge
     s.runTime(30)

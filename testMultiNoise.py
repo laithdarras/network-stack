@@ -13,7 +13,7 @@ def main():
     s.addChannel(s.COMMAND_CHANNEL)
     s.addChannel(s.GENERAL_CHANNEL)
     s.addChannel(s.TRANSPORT_CHANNEL)
-    s.addChannel(s.PROJECT3_TGEN_CHANNEL)
+    s.addChannel(s.TRANSPORT_TEST_CHANNEL)
 
     # Give routing extra time to converge under heavy noise
     s.runTime(1200)  # Increased for heavy noise + multi-hop

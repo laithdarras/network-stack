@@ -20,7 +20,7 @@ def main():
     s.addChannel(s.COMMAND_CHANNEL);
     s.addChannel(s.GENERAL_CHANNEL);
     s.addChannel(s.TRANSPORT_CHANNEL);
-    s.addChannel(s.PROJECT3_TGEN_CHANNEL);
+    s.addChannel(s.TRANSPORT_TEST_CHANNEL);
 
     # After sending a ping, simulate a little to prevent collision.
 

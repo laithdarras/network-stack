@@ -22,22 +22,15 @@ class TestSim:
     COMMAND_CHANNEL="command"
     GENERAL_CHANNEL="general"
 
-    # Project 1
     NEIGHBOR_CHANNEL="neighbor"
     FLOODING_CHANNEL="flooding"
 
-    # Project 2
     ROUTING_CHANNEL="routing"
 
-    # Project 3
     TRANSPORT_CHANNEL="transport"
-    PROJECT3_TGEN_CHANNEL="Project3TGen"
+    TRANSPORT_TEST_CHANNEL="TransportTest"
 
-    # Project 4
-    PROJECT4_CHAT_CHANNEL="Project4Chat"
-
-    # Personal Debuggin Channels for some of the additional models implemented.
-    HASHMAP_CHANNEL="hashmap"
+    CHAT_CHANNEL="Chat"
 
     # Initialize Vars
     numMote=0
@@ -201,8 +194,8 @@ def main():
     # s.addChannel(s.GENERAL_CHANNEL)
     # s.addChannel(s.FLOODING_CHANNEL)
     # s.addChannel(s.NEIGHBOR_CHANNEL)
-    # s.addChannel(s.PROJECT3_TGEN_CHANNEL)
-    s.addChannel(s.PROJECT4_CHAT_CHANNEL)
+    # s.addChannel(s.TRANSPORT_TEST_CHANNEL)
+    s.addChannel(s.CHAT_CHANNEL)
 
     # Allow routing to settle
     s.runTime(8000)
