@@ -1,5 +1,5 @@
 // ChatServer interface
  
 interface ChatServer {
-   command void start();
+   command void start();      // start listening for messages
 }
