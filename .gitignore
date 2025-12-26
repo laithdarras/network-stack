@@ -1,4 +1,3 @@
-# Binaries
 *.pyc
 simbuild/*
 build/*
