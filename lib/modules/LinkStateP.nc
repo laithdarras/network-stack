@@ -221,14 +221,14 @@ implementation {
    }
 
 
-   // Build the adjacency cost matrix from the LSDB and run Dijkstra
+   // Build the adjacency matrix from the LSDB and run Dijkstra
    void computeRoutes() {
    uint16_t src;
    uint16_t i;
    uint16_t j;
    bool visited[MAX_NODES];
 
-   // Initialize cost matrix and vectors
+   // Initialize matrix
    for (i = 0; i < MAX_NODES; i++) {
       for (j = 0; j < MAX_NODES; j++) {
          cost[i][j] = (i == j) ? 0 : INF;
@@ -259,7 +259,7 @@ implementation {
    dist[src] = 0;
    prev[src] = src;
 
-   // Dijkstra main loop
+   // Dijkstra loop
    for (i = 0; i < MAX_NODES; i++) {
       uint16_t u = INF;
       uint16_t minDist = INF;
@@ -310,7 +310,7 @@ implementation {
    }
    }
 
-   // Debugging: print the Link State Database (all LSAs)
+   // Debugging: print LSDB
    command void LinkState.printLinkStateDB() {
       uint8_t i;
       uint8_t j;
@@ -334,7 +334,7 @@ implementation {
       }
    }
 
-   // Debugging: print the routing table
+   // Debugging: print routing table
    command void LinkState.printRouteTable() {
    uint16_t i;
    dbg(GENERAL_CHANNEL, "Routing Table for Node %d\n", TOS_NODE_ID);
@@ -373,4 +373,3 @@ implementation {
       }
    }
 }
-

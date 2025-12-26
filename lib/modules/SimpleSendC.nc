@@ -12,7 +12,7 @@ implementation{
    components RandomC as Random;
    components new AMSenderC(channel);
 
-   //Timers
+   // Timers
    SimpleSendP.sendTimer -> sendTimer;
    SimpleSendP.Random -> Random;
 
@@ -20,7 +20,7 @@ implementation{
    SimpleSendP.AMPacket -> AMSenderC;
    SimpleSendP.AMSend -> AMSenderC;
 
-   //Lists
+   // Lists
    components new PoolC(sendInfo, 20);
    components new QueueC(sendInfo*, 20);
 

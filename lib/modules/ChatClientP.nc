@@ -56,9 +56,9 @@ implementation {
 
    void processLine(char *line) {
       if (strncmp(line, "listUsrRply ", 12) == 0) {
-         dbg(PROJECT4_CHAT_CHANNEL, "ChatClient listUsrRply: %s\n", line + 12);
+         dbg(CHAT_CHANNEL, "ChatClient listUsrRply: %s\n", line + 12);
       } else {
-         dbg(PROJECT4_CHAT_CHANNEL, "ChatClient recv: %s\n", line);
+         dbg(CHAT_CHANNEL, "ChatClient recv: %s\n", line);
       }
    }
 
@@ -77,7 +77,7 @@ implementation {
 
       fd = call Transport.socket();
       if (fd == NULL_SOCKET) {
-         dbg(PROJECT4_CHAT_CHANNEL, "ChatClient: socket alloc failed\n");
+         dbg(CHAT_CHANNEL, "ChatClient: socket alloc failed\n");
          return;
       }
 
@@ -85,7 +85,7 @@ implementation {
       addr.port = clientPort;
       err = call Transport.bind(fd, &addr);
       if (err != SUCCESS) {
-         dbg(PROJECT4_CHAT_CHANNEL, "ChatClient: bind failed port=%hu\n", clientPort);
+         dbg(CHAT_CHANNEL, "ChatClient: bind failed port=%hu\n", clientPort);
          call Transport.close(fd);
          fd = NULL_SOCKET;
          return;
@@ -95,7 +95,7 @@ implementation {
       serverAddr.port = CHAT_PORT;
       err = call Transport.connect(fd, &serverAddr);
       if (err != SUCCESS) {
-         dbg(PROJECT4_CHAT_CHANNEL, "ChatClient: connect failed to %hu:%hu\n", SERVER_NODE, CHAT_PORT);
+         dbg(CHAT_CHANNEL, "ChatClient: connect failed to %hu:%hu\n", SERVER_NODE, CHAT_PORT);
          call Transport.close(fd);
          fd = NULL_SOCKET;
          return;
@@ -117,7 +117,7 @@ implementation {
       lineBuf[0] = '\0';
       call ReadTimer.startPeriodic(200);
 
-      dbg(PROJECT4_CHAT_CHANNEL, "ChatClient: connected to server %hu:%hu as %s on port %hu\n",
+      dbg(CHAT_CHANNEL, "ChatClient: connected to server %hu:%hu as %s on port %hu\n",
           SERVER_NODE, CHAT_PORT, username, clientPort);
    }
 
@@ -127,7 +127,7 @@ implementation {
       uint16_t idx;
 
       if (!connected || fd == NULL_SOCKET) {
-         dbg(PROJECT4_CHAT_CHANNEL, "ChatClient: sendMsg skipped (not connected)\n");
+         dbg(CHAT_CHANNEL, "ChatClient: sendMsg skipped (not connected)\n");
          return;
       }
 
@@ -135,7 +135,7 @@ implementation {
       idx = appendStr(outBuf, idx, "msg ", sizeof(outBuf));
       idx = appendStr(outBuf, idx, msg, sizeof(outBuf));
       finalizeCrlf(outBuf, idx, sizeof(outBuf));
-      dbg(PROJECT4_CHAT_CHANNEL, "ChatClient sendMsg: %s\n", outBuf);
+      dbg(CHAT_CHANNEL, "ChatClient sendMsg: %s\n", outBuf);
       call Transport.write(fd, (uint8_t *)outBuf, strlen(outBuf));
    }  
 
@@ -145,7 +145,7 @@ implementation {
       uint16_t idx;
 
       if (!connected || fd == NULL_SOCKET) {
-         dbg(PROJECT4_CHAT_CHANNEL, "ChatClient: sendWhisper skipped (not connected)\n");
+         dbg(CHAT_CHANNEL, "ChatClient: sendWhisper skipped (not connected)\n");
          return;
       }
 
@@ -155,7 +155,7 @@ implementation {
       idx = appendChar(outBuf, idx, ' ', sizeof(outBuf));
       idx = appendStr(outBuf, idx, msg, sizeof(outBuf));
       finalizeCrlf(outBuf, idx, sizeof(outBuf));
-      dbg(PROJECT4_CHAT_CHANNEL, "ChatClient sendWhisper: %s\n", outBuf);
+      dbg(CHAT_CHANNEL, "ChatClient sendWhisper: %s\n", outBuf);
       call Transport.write(fd, (uint8_t *)outBuf, strlen(outBuf));
    }
 
@@ -165,14 +165,14 @@ implementation {
       uint16_t idx;
 
       if (!connected || fd == NULL_SOCKET) {
-         dbg(PROJECT4_CHAT_CHANNEL, "ChatClient: sendListUsr skipped (not connected)\n");
+         dbg(CHAT_CHANNEL, "ChatClient: sendListUsr skipped (not connected)\n");
          return;
       }
 
       idx = 0;
       idx = appendStr(outBuf, idx, "listusr", sizeof(outBuf));
       finalizeCrlf(outBuf, idx, sizeof(outBuf));
-      dbg(PROJECT4_CHAT_CHANNEL, "ChatClient sendListUsr: %s\n", outBuf);
+      dbg(CHAT_CHANNEL, "ChatClient sendListUsr: %s\n", outBuf);
       call Transport.write(fd, (uint8_t *)outBuf, strlen(outBuf));
    }
    

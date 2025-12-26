@@ -18,5 +18,4 @@ implementation{
 
    components new SimpleSendC(channel) as NDSend;
    NeighborDiscoveryP.SS -> NDSend;         
-
 }

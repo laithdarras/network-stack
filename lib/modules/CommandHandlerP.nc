@@ -1,11 +1,3 @@
-/**
- * @author UCM ANDES Lab
- * $Author: abeltran2 $
- * $LastChangedDate: 2014-08-31 16:06:26 -0700 (Sun, 31 Aug 2014) $
- *
- */
-
-
 #include "../../includes/CommandMsg.h"
 #include "../../includes/command.h"
 #include "../../includes/channels.h"
@@ -56,113 +48,110 @@ implementation{
                 post processCommand();
                 return;
             }
-            // Change it to our type.
             msg = (CommandMsg*) payload;
 
             // dbg(COMMAND_CHANNEL, "A Command has been Issued.\n");
             buff = (uint8_t*) msg->payload;
             commandID = msg->id;
 
-            //Find out which command was called and call related command
+            // Find out which command was called
             switch(commandID){
-            // A ping will have the destination of the packet as the first
-            // value and the string in the remainder of the payload
-            case CMD_PING:
-                // dbg(COMMAND_CHANNEL, "Command Type: Ping\n");
-                signal CommandHandler.ping(buff[0], &buff[1]);
-                break;
+                case CMD_PING:
+                    // dbg(COMMAND_CHANNEL, "Command Type: Ping\n");
+                    signal CommandHandler.ping(buff[0], &buff[1]);
+                    break;
 
-            case CMD_NEIGHBOR_DUMP:
-                // dbg(COMMAND_CHANNEL, "Command Type: Neighbor Dump\n");
-                signal CommandHandler.printNeighbors();
-                break;
+                case CMD_NEIGHBOR_DUMP:
+                    // dbg(COMMAND_CHANNEL, "Command Type: Neighbor Dump\n");
+                    signal CommandHandler.printNeighbors();
+                    break;
 
-            case CMD_LINKSTATE_DUMP:
-                // dbg(COMMAND_CHANNEL, "Command Type: Link State Dump\n");
-                signal CommandHandler.printLinkState();
-                break;
+                case CMD_LINKSTATE_DUMP:
+                    // dbg(COMMAND_CHANNEL, "Command Type: Link State Dump\n");
+                    signal CommandHandler.printLinkState();
+                    break;
 
-            case CMD_ROUTETABLE_DUMP:
-                // dbg(COMMAND_CHANNEL, "Command Type: Route Table Dump\n");
-                signal CommandHandler.printRouteTable();
-                break;
+                case CMD_ROUTETABLE_DUMP:
+                    // dbg(COMMAND_CHANNEL, "Command Type: Route Table Dump\n");
+                    signal CommandHandler.printRouteTable();
+                    break;
 
-            case CMD_TEST_CLIENT:
-                dbg(COMMAND_CHANNEL, "Command Type: Test_Client\n");
-                testClientAddress = readUint16(&buff[0]);
-                testClientDest = readUint16(&buff[2]);
-                testClientSrcPort = readUint16(&buff[4]);
-                testClientDestPort = readUint16(&buff[6]);
-                testClientTransfer = readUint16(&buff[8]);
-                signal CommandHandler.setTestClient();
-                break;
+                case CMD_TEST_CLIENT:
+                    dbg(COMMAND_CHANNEL, "Command Type: Test_Client\n");
+                    testClientAddress = readUint16(&buff[0]);
+                    testClientDest = readUint16(&buff[2]);
+                    testClientSrcPort = readUint16(&buff[4]);
+                    testClientDestPort = readUint16(&buff[6]);
+                    testClientTransfer = readUint16(&buff[8]);
+                    signal CommandHandler.setTestClient();
+                    break;
 
-            case CMD_TEST_SERVER:
-                dbg(COMMAND_CHANNEL, "Command Type: Test_Server\n");
-                testServerAddress = readUint16(&buff[0]);
-                testServerPort = readUint16(&buff[2]);
-                signal CommandHandler.setTestServer();
-                break;
+                case CMD_TEST_SERVER:
+                    dbg(COMMAND_CHANNEL, "Command Type: Test_Server\n");
+                    testServerAddress = readUint16(&buff[0]);
+                    testServerPort = readUint16(&buff[2]);
+                    signal CommandHandler.setTestServer();
+                    break;
 
-            case CMD_CLOSE:
-                dbg(COMMAND_CHANNEL, "Command Type: Test_Close\n");
-                testCloseClientAddr = readUint16(&buff[0]);
-                testCloseDest = readUint16(&buff[2]);
-                testCloseSrcPort = readUint16(&buff[4]);
-                testCloseDestPort = readUint16(&buff[6]);
-                signal CommandHandler.setTestClose();
-                break;
+                case CMD_CLOSE:
+                    dbg(COMMAND_CHANNEL, "Command Type: Test_Close\n");
+                    testCloseClientAddr = readUint16(&buff[0]);
+                    testCloseDest = readUint16(&buff[2]);
+                    testCloseSrcPort = readUint16(&buff[4]);
+                    testCloseDestPort = readUint16(&buff[6]);
+                    signal CommandHandler.setTestClose();
+                    break;
 
-            case CMD_CHAT_HELLO: {
-                cmd_chat_hello_t *hello = (cmd_chat_hello_t *)buff;
-                char username[CMD_CHAT_USERNAME_MAX + 1];
-                uint16_t clientPort;
-                uint8_t i;
-                for (i = 0; i < CMD_CHAT_USERNAME_MAX && hello->username[i] != 0; i++) {
-                    username[i] = hello->username[i];
+                case CMD_CHAT_HELLO: {
+                    cmd_chat_hello_t *hello = (cmd_chat_hello_t *)buff;
+                    char username[CMD_CHAT_USERNAME_MAX + 1];
+                    uint16_t clientPort;
+                    uint8_t i;
+                    for (i = 0; i < CMD_CHAT_USERNAME_MAX && hello->username[i] != 0; i++) {
+                        username[i] = hello->username[i];
+                    }
+                    username[i] = '\0';
+                    clientPort = readUint16((uint8_t *)&hello->clientPort);
+                    signal CommandHandler.chatHello(username, clientPort);
+                    break;
                 }
-                username[i] = '\0';
-                clientPort = readUint16((uint8_t *)&hello->clientPort);
-                signal CommandHandler.chatHello(username, clientPort);
-                break;
-            }
 
-            case CMD_CHAT_MSG: {
-                char chatMsg[CMD_CHAT_MSG_MAX + 1];
-                uint8_t i;
-                for (i = 0; i < CMD_CHAT_MSG_MAX && buff[i] != 0; i++) {
-                    chatMsg[i] = buff[i];
+                case CMD_CHAT_MSG: {
+                    char chatMsg[CMD_CHAT_MSG_MAX + 1];
+                    uint8_t i;
+                    for (i = 0; i < CMD_CHAT_MSG_MAX && buff[i] != 0; i++) {
+                        chatMsg[i] = buff[i];
+                    }
+                    chatMsg[i] = '\0';
+                    signal CommandHandler.chatMsg(chatMsg);
+                    break;
                 }
-                chatMsg[i] = '\0';
-                signal CommandHandler.chatMsg(chatMsg);
-                break;
-            }
 
-            case CMD_CHAT_WHISPER: {
-                cmd_chat_whisper_t *whisper = (cmd_chat_whisper_t *)buff;
-                char username[CMD_CHAT_USERNAME_MAX + 1];
-                char whisperMsg[CMD_CHAT_WHISPER_MSG_MAX + 1];
-                uint8_t i;
-                for (i = 0; i < CMD_CHAT_USERNAME_MAX && whisper->username[i] != 0; i++) {
-                    username[i] = whisper->username[i];
+                case CMD_CHAT_WHISPER: {
+                    cmd_chat_whisper_t *whisper = (cmd_chat_whisper_t *)buff;
+                    char username[CMD_CHAT_USERNAME_MAX + 1];
+                    char whisperMsg[CMD_CHAT_WHISPER_MSG_MAX + 1];
+                    uint8_t i;
+                    for (i = 0; i < CMD_CHAT_USERNAME_MAX && whisper->username[i] != 0; i++) {
+                        username[i] = whisper->username[i];
+                    }
+                    username[i] = '\0';
+                    for (i = 0; i < CMD_CHAT_WHISPER_MSG_MAX && whisper->msg[i] != 0; i++) {
+                        whisperMsg[i] = whisper->msg[i];
+                    }
+                    whisperMsg[i] = '\0';
+                    signal CommandHandler.chatWhisper(username, whisperMsg);
+                    break;
                 }
-                username[i] = '\0';
-                for (i = 0; i < CMD_CHAT_WHISPER_MSG_MAX && whisper->msg[i] != 0; i++) {
-                    whisperMsg[i] = whisper->msg[i];
+
+                case CMD_CHAT_LISTUSR:
+                    signal CommandHandler.chatListUsr();
+                    break;
+
+                default:
+                    dbg(COMMAND_CHANNEL, "CMD_ERROR: \"%d\" does not match any known commands.\n", msg->id);
+                    break;
                 }
-                whisperMsg[i] = '\0';
-                signal CommandHandler.chatWhisper(username, whisperMsg);
-                break;
-            }
-
-            case CMD_CHAT_LISTUSR:
-                signal CommandHandler.chatListUsr();
-                break;
-
-            default:
-                dbg(COMMAND_CHANNEL, "CMD_ERROR: \"%d\" does not match any known commands.\n", msg->id);
-                break;
-            }
             call Pool.put(raw_msg);
         }
 

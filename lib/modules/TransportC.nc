@@ -13,7 +13,6 @@ implementation {
    components new TimerMilliC() as RetransTimerC;
    components MainC;
    
-   // Transport = TransportP.Transport;
    Transport = TransportP.Transport;
    TransportP.LinkState = LinkState;
    TransportP.SimpleSend -> TransportSend;

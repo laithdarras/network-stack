@@ -1,6 +1,5 @@
 #include "../../includes/am_types.h"
 
-// Flooding configuration: exposes Flooding and wires its P module
 configuration FloodingC{
    provides interface Flooding;
    uses interface NeighborDiscovery;

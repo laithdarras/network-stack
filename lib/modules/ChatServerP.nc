@@ -148,7 +148,7 @@ implementation {
       }
 
       finalizeCrlf(outBuf, idx, sizeof(outBuf));
-      dbg(PROJECT4_CHAT_CHANNEL, "ChatServer listUsrRply to %s: %s\n",
+      dbg(CHAT_CHANNEL, "ChatServer listUsrRply to %s: %s\n",
           (c->username[0] != '\0') ? c->username : "<nouser>", outBuf);
       sendToClient(c->fd, outBuf);
    }
@@ -162,7 +162,7 @@ implementation {
                c->username[i] = u[i];
             }
             c->username[i] = '\0';
-            dbg(PROJECT4_CHAT_CHANNEL, "ChatServer: user=%s joined\n", c->username);
+            dbg(CHAT_CHANNEL, "ChatServer: user=%s joined\n", c->username);
          }
          return;
       }
@@ -212,7 +212,6 @@ implementation {
 
       // Append to line buffer
       if (c->lineLen + n >= LINE_BUF_SIZE) {
-         // Overflow protection: reset buffer
          c->lineLen = 0;
          c->lineBuf[0] = '\0';
          return;
@@ -273,10 +272,9 @@ implementation {
       }
 
 
-      // sanity checks
       serverSocket = call Transport.socket();
       if (serverSocket == NULL_SOCKET) {
-         dbg(PROJECT4_CHAT_CHANNEL, "ChatServer: socket alloc failed\n");
+         dbg(CHAT_CHANNEL, "ChatServer: socket alloc failed\n");
          return;
       }
 
@@ -284,7 +282,7 @@ implementation {
       addr.port = CHAT_PORT;
       err = call Transport.bind(serverSocket, &addr);
       if (err != SUCCESS) {
-         dbg(PROJECT4_CHAT_CHANNEL, "ChatServer: bind failed port=%hu\n", CHAT_PORT);
+         dbg(CHAT_CHANNEL, "ChatServer: bind failed port=%hu\n", CHAT_PORT);
          call Transport.close(serverSocket);
          serverSocket = NULL_SOCKET;
          return;
@@ -292,7 +290,7 @@ implementation {
 
       err = call Transport.listen(serverSocket);
       if (err != SUCCESS) {
-         dbg(PROJECT4_CHAT_CHANNEL, "ChatServer: listen failed port=%hu\n", CHAT_PORT);
+         dbg(CHAT_CHANNEL, "ChatServer: listen failed port=%hu\n", CHAT_PORT);
          call Transport.close(serverSocket);
          serverSocket = NULL_SOCKET;
          return;
@@ -300,7 +298,7 @@ implementation {
 
       call AcceptTimer.startPeriodic(200);
       call ReadTimer.startPeriodic(200);
-      dbg(PROJECT4_CHAT_CHANNEL, "ChatServer: listening on port %hu\n", CHAT_PORT);
+      dbg(CHAT_CHANNEL, "ChatServer: listening on port %hu\n", CHAT_PORT);
    }
 
    event void AcceptTimer.fired() {
@@ -317,10 +315,10 @@ implementation {
          }
          c = allocClient(fd);
          if (c == NULL) {
-            dbg(PROJECT4_CHAT_CHANNEL, "ChatServer: max clients reached, closing fd=%hhu\n", fd);
+            dbg(CHAT_CHANNEL, "ChatServer: max clients reached, closing fd=%hhu\n", fd);
             call Transport.close(fd);
          } else {
-            dbg(PROJECT4_CHAT_CHANNEL, "ChatServer: accepted fd=%hhu\n", fd);
+            dbg(CHAT_CHANNEL, "ChatServer: accepted fd=%hhu\n", fd);
          }
       }
    }
