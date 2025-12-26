@@ -187,9 +187,11 @@ implementation {
             if (len > USERNAME_MAX) {
                len = USERNAME_MAX;
             }
+
             for (i = 0; i < len; i++) {
                target[i] = rest[i];
             }
+            
             target[len] = '\0';
          }
          whisperTo(target, c->username, space + 1);
